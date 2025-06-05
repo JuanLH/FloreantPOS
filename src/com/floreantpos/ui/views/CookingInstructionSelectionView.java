@@ -20,15 +20,18 @@ package com.floreantpos.ui.views;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -76,7 +79,7 @@ public class CookingInstructionSelectionView extends OkCancelOptionDialog {
 		table.setRowHeight(35);
 		scrollPane.setViewportView(table);
 		scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(50,Integer.MAX_VALUE));
-
+		
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
 			@Override
@@ -88,7 +91,28 @@ public class CookingInstructionSelectionView extends OkCancelOptionDialog {
 				CookingInstruction cookingInstruction = model.rowsList.get(index);
 				tfCookingInstruction.setText(cookingInstruction.getDescription());
 			}
+			
+			
 		});
+		
+		table.addKeyListener(new KeyAdapter() {
+		    @Override
+		    public void keyPressed(KeyEvent e) {
+		        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+		            int row = table.getSelectedRow();
+		            if (row >= 0) {
+		            	doOk();
+		            }
+		        }
+		        if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
+		            int row = table.getSelectedRow();
+		            if (row >= 0) {
+		            	setFocusInTextField();
+		            }
+		        }
+		    }
+		});
+		
 
 		tfCookingInstruction.addKeyListener(new KeyListener() {
 
@@ -104,7 +128,9 @@ public class CookingInstructionSelectionView extends OkCancelOptionDialog {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
-
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					doOk();
+		        }
 			}
 		});
 	
