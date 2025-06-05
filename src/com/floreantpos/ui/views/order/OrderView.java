@@ -731,7 +731,7 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 		if (!dialog.isCanceled()) {
 			currentTicket.setCustomer(dialog.getSelectedCustomer());
 			currentTicket.setDeliveryAddress(dialog.getSelectedCustomer().getAddress());
-			btnCustomer.setText("<html><body><center>CLIENTE<br><b>\"" + dialog.getSelectedCustomer().getFirstName() + " "+ dialog.getSelectedCustomer().getMobileNo() + "\"<b></center></body></html>");
+			btnCustomer.setText("<html><body><center>"+ POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT +"<br><b>\"" + dialog.getSelectedCustomer().getFirstName() + " "+ dialog.getSelectedCustomer().getMobileNo() + "\"<b></center></body></html>");
 
 		}
 	}
@@ -862,8 +862,8 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 				btnGuestNo.setText("GUEST" + ": " + String.valueOf(currentTicket.getNumberOfGuests()));
 			}
 			
-			if(type.isDelivery() && getCurrentTicket().getCustomer() != null) {
-				btnCustomer.setText("<html><body><center>CLIENTE<br><b>\"" + getCurrentTicket().getCustomer().getFirstName() +" "+getCurrentTicket().getCustomer().getMobileNo() + "\"<b></center></body></html>");
+			if(getCurrentTicket().getCustomer() != null) {
+				btnCustomer.setText("<html><body><center>"+ POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT +"<br><b>\"" + getCurrentTicket().getCustomer().getFirstName() +" "+getCurrentTicket().getCustomer().getMobileNo() + "\"</b></center></body></html>");
 			}
 			OrderServiceExtension orderService = (OrderServiceExtension) ExtensionManager.getPlugin(OrderServiceExtension.class);
 			btnDeliveryInfo.setVisible(orderService != null && type.isDelivery() && type.isRequiredCustomerData());
