@@ -406,6 +406,7 @@ public class DefaultCustomerListView extends CustomerSelector {
 		//TODO: handle exception
 
 		form.enableCustomerFields(true);
+		form.createNew();
 		BeanEditorDialog dialog = new BeanEditorDialog(POSUtil.getBackOfficeWindow(), form);
 		dialog.setResizable(false);
 		dialog.open();

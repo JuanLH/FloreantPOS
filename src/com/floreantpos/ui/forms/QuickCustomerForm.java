@@ -42,7 +42,9 @@ import org.hibernate.StaleObjectStateException;
 
 import com.floreantpos.Messages;
 import com.floreantpos.bo.ui.BOMessageDialog;
+import com.floreantpos.main.Application;
 import com.floreantpos.model.Customer;
+import com.floreantpos.model.Restaurant;
 import com.floreantpos.model.dao.CustomerDAO;
 import com.floreantpos.model.util.IllegalModelStateException;
 import com.floreantpos.model.util.ZipCodeUtil;
@@ -239,7 +241,9 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setText(""); //$NON-NLS-1$
 		tfZip.setText(""); //$NON-NLS-1$
 		tfCellPhone.setText("");//$NON-NLS-1$
-		tfDeliveryCharge.setText(""); //$NON-NLS-1$
+		
+		Restaurant restaurant = Application.getInstance().getRestaurant();
+		tfDeliveryCharge.setText(restaurant.getDeliveryChargeAmount().toString()); //$NON-NLS-1$
 	}
 
 	public void updateCustomer(Customer customer) {
