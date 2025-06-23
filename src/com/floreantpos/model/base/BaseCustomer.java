@@ -2,6 +2,9 @@ package com.floreantpos.model.base;
 
 import java.io.Serializable;
 
+import com.floreantpos.main.Application;
+import com.floreantpos.model.Restaurant;
+
 
 /**
  * This is an object that contains data related to the CUSTOMER table.
@@ -40,6 +43,7 @@ public abstract class BaseCustomer  implements Comparable, Serializable {
 	public static String PROP_CREDIT_CARD_NO = "creditCardNo";
 	public static String PROP_CREDIT_LIMIT = "creditLimit";
 	public static String PROP_LOYALTY_NO = "loyaltyNo";
+	public static String PROP_DELIVERY_CHARGE = "deliveryCharge";
 
 
 	// constructors
@@ -89,6 +93,7 @@ public abstract class BaseCustomer  implements Comparable, Serializable {
 		protected java.lang.Double creditSpent;
 		protected java.lang.String creditCardNo;
 		protected java.lang.String note;
+		protected java.lang.Double deliveryCharge;
 
 	// collections
 	private java.util.List<com.floreantpos.model.DeliveryAddress> deliveryAddresses;
@@ -523,6 +528,23 @@ public abstract class BaseCustomer  implements Comparable, Serializable {
 	 */
 	public void setNote (java.lang.String note) {
 		this.note = note;
+	}
+	
+	/**
+	 * Return the value associated with the column: DeliveryCharge
+	 */
+	public java.lang.Double getDeliveryCharge () {
+		Restaurant restaurant = Application.getInstance().getRestaurant();
+		Double deliveryCharge = (this.deliveryCharge==null)?restaurant.getDeliveryChargeAmount():this.deliveryCharge;
+		return deliveryCharge;
+	}
+
+	/**
+	 * Set the value related to the column: DeliveryCharge
+	 * @param note the DeliveryCharge value
+	 */
+	public void setDeliveryCharge (java.lang.Double deliveryCharge) {
+		this.deliveryCharge = deliveryCharge;
 	}
 
 

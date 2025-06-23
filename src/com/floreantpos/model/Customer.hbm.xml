@@ -31,6 +31,7 @@
 		<property name="creditSpent" column="CREDIT_SPENT" type="java.lang.Double" />
 		<property name="creditCardNo" column="CREDIT_CARD_NO" length="30" type="string" />
 		<property name="note" column="NOTE" length="255" type="string" />
+		<property name="deliveryCharge" column="DELIVERY_CHARGE" length="255" type="java.lang.Double" />
 		
 		<bag cascade="all,delete-orphan" inverse="true" lazy="false" name="deliveryAddresses" table="DELIVERY_ADDRESS">
 			<key>

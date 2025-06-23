@@ -62,6 +62,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 	private FixedLengthTextField tfFirstName;
 	private FixedLengthTextField tfLastName;
 	private FixedLengthTextField tfName;
+	private FixedLengthTextField tfDeliveryCharge;
 	private JTextField tfState;
 	private JTextField tfCellPhone;
 	private QwertyKeyPad qwertyKeyPad;
@@ -100,23 +101,25 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfState = new JTextField(30);
 
 		JLabel lblCellPhone = new JLabel(Messages.getString("CustomerForm.32")); //$NON-NLS-1$
+		JLabel lblDeliveryCharge = new JLabel(Messages.getString("CustomerForm.64")); //$NON-NLS-1$
+		tfDeliveryCharge = new FixedLengthTextField(30);
 
 		inputPanel.add(lblCellPhone, "cell 0 1,alignx right"); //$NON-NLS-1$
 		tfCellPhone = new JTextField(30);
 		inputPanel.add(tfCellPhone, "cell 1 1"); //$NON-NLS-1$
-		//setPreferredSize(PosUIManager.getSize(800, 350));
+		// setPreferredSize(PosUIManager.getSize(800, 350));
 
 		JLabel lblFirstName = new JLabel(Messages.getString("CustomerForm.3")); //$NON-NLS-1$
 
-		//inputPanel.add(lblFirstName, "cell 0 2,alignx right"); //$NON-NLS-1$
+		// inputPanel.add(lblFirstName, "cell 0 2,alignx right"); //$NON-NLS-1$
 		tfFirstName = new FixedLengthTextField();
-		//inputPanel.add(tfFirstName, "cell 1 2"); //$NON-NLS-1$
+		// inputPanel.add(tfFirstName, "cell 1 2"); //$NON-NLS-1$
 
 		JLabel lblLastName = new JLabel(Messages.getString("CustomerForm.11")); //$NON-NLS-1$
 
-		//inputPanel.add(lblLastName, "cell 0 3,alignx right"); //$NON-NLS-1$
+		// inputPanel.add(lblLastName, "cell 0 3,alignx right"); //$NON-NLS-1$
 		tfLastName = new FixedLengthTextField();
-		//inputPanel.add(tfLastName, "cell 1 3"); //$NON-NLS-1$
+		// inputPanel.add(tfLastName, "cell 1 3"); //$NON-NLS-1$
 
 		JLabel lblName = new JLabel("Name"); //$NON-NLS-1$
 
@@ -134,6 +137,9 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		inputPanel.add(lblState, "cell 0 6,right"); //$NON-NLS-1$
 		inputPanel.add(tfState, "cell 1 6"); //$NON-NLS-1$
 
+		inputPanel.add(lblDeliveryCharge, "cell 0 7,right");
+		inputPanel.add(tfDeliveryCharge, "cell 1 7");
+
 		inputPanel.add(lblAddress, "cell 2 1 1 6,right"); //$NON-NLS-1$
 		inputPanel.add(scrlDescription, "grow, cell 3 1 1 6"); //$NON-NLS-1$
 
@@ -142,7 +148,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		add(inputPanel, BorderLayout.CENTER);
 
 		if (isKeypad) {
-			add(qwertyKeyPad, BorderLayout.SOUTH); //$NON-NLS-1$
+			add(qwertyKeyPad, BorderLayout.SOUTH); // $NON-NLS-1$
 		}
 
 		tfZip.addActionListener(new ActionListener() {
@@ -175,11 +181,12 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 
 		order.add(tfCellPhone);
 		order.add(tfName);
-		//order.add(tfFirstName);
-		//order.add(tfLastName);
+		// order.add(tfFirstName);
+		// order.add(tfLastName);
 		order.add(tfZip);
 		order.add(tfCity);
 		order.add(tfState);
+		order.add(tfDeliveryCharge);
 		order.add(tfAddress);
 
 		newPolicy = new MyOwnFocusTraversalPolicy(order);
@@ -196,6 +203,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setEnabled(enable);
 		tfZip.setEnabled(enable);
 		tfCellPhone.setEnabled(enable);
+		tfDeliveryCharge.setEnabled(enable);
 	}
 
 	@Override
@@ -207,6 +215,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setEnabled(enable);
 		tfZip.setEnabled(enable);
 		tfCellPhone.setEnabled(enable);
+		tfDeliveryCharge.setEnabled(enable);
 	}
 
 	public void setFieldsEditable(boolean editable) {
@@ -217,6 +226,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setEditable(editable);
 		tfZip.setEditable(editable);
 		tfCellPhone.setEditable(editable);
+		tfDeliveryCharge.setEnabled(editable);
 	}
 
 	@Override
@@ -229,16 +239,18 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setText(""); //$NON-NLS-1$
 		tfZip.setText(""); //$NON-NLS-1$
 		tfCellPhone.setText("");//$NON-NLS-1$
+		tfDeliveryCharge.setText(""); //$NON-NLS-1$
 	}
-	
+
 	public void updateCustomer(Customer customer) {
-		tfName.setText(customer.getName());//$NON-NLS-1$
-		tfFirstName.setText(customer.getName());//$NON-NLS-1$
-		tfLastName.setText(customer.getLastName());//$NON-NLS-1$
-		tfAddress.setText(customer.getAddress()); //$NON-NLS-1$
-		tfCity.setText(customer.getCity()); //$NON-NLS-1$
-		tfZip.setText(customer.getZipCode()); //$NON-NLS-1$
-		tfCellPhone.setText(customer.getMobileNo());//$NON-NLS-1$
+		tfName.setText(customer.getName());// $NON-NLS-1$
+		tfFirstName.setText(customer.getName());// $NON-NLS-1$
+		tfLastName.setText(customer.getLastName());// $NON-NLS-1$
+		tfAddress.setText(customer.getAddress()); // $NON-NLS-1$
+		tfCity.setText(customer.getCity()); // $NON-NLS-1$
+		tfZip.setText(customer.getZipCode()); // $NON-NLS-1$
+		tfCellPhone.setText(customer.getMobileNo());// $NON-NLS-1$
+		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");//$NON-NLS-1$
 		setBean(customer);
 	}
 
@@ -268,12 +280,13 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfFirstName.setText(customer.getFirstName());
 		tfLastName.setText(customer.getLastName());
 		tfCity.setText(customer.getCity());
-		//tfZip.setText(customer.getState());
-		//TODO: 
+		// tfZip.setText(customer.getState());
+		// TODO:
 		tfState.setText(customer.getState());
 		tfZip.setText(customer.getZipCode());
 		tfCellPhone.setText(customer.getMobileNo());
 		tfAddress.setText(customer.getAddress());
+		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");
 	}
 
 	@Override
@@ -300,10 +313,11 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		customer.setAddress(tfAddress.getText());
 		customer.setCity(tfCity.getText());
 		customer.setState(tfState.getText());
-		//customer.setState(tfZip.getText());
-		//TODO: 
+		// customer.setState(tfZip.getText());
+		// TODO:
 		customer.setZipCode(tfZip.getText());
 		customer.setMobileNo(tfCellPhone.getText());
+		customer.setDeliveryCharge(Double.parseDouble(tfDeliveryCharge.getText()));
 
 		return true;
 	}
@@ -315,7 +329,8 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 			if (bean2 == null)
 				return false;
 
-			int option = POSMessageDialog.showYesNoQuestionDialog(POSUtil.getBackOfficeWindow(), "Are you sure to delete selected table?", "Confirm"); //$NON-NLS-1$ //$NON-NLS-2$
+			int option = POSMessageDialog.showYesNoQuestionDialog(POSUtil.getBackOfficeWindow(),
+					"Are you sure to delete selected table?", "Confirm"); //$NON-NLS-1$ //$NON-NLS-2$
 			if (option != JOptionPane.YES_OPTION) {
 				return false;
 			}
