@@ -225,6 +225,24 @@ public class CustomerDAO extends BaseCustomerDAO {
 		}
 	}
 
+	public List<Customer> findByLoyaltyNo(String loyaltyNo) {
+		Session session = null;
+
+		try {
+			session = getSession();
+			Criteria criteria = session.createCriteria(getReferenceClass());
+
+			if (StringUtils.isNotEmpty(loyaltyNo))
+				criteria.add(Restrictions.eq(Customer.PROP_LOYALTY_NO, loyaltyNo));
+			return criteria.list();
+		} finally {
+			if (session != null) {
+				closeSession(session);
+			}
+		}
+	}
+
+
 	public List<Customer> findByName(String name) {
 		Session session = null;
 

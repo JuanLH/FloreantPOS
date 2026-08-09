@@ -66,8 +66,11 @@ public class Customer extends BaseCustomer {
 		return fName;
 	}
 	
-	public String getName(){
-		String name=super.getFirstName()+" "+ super.getLastName();  //$NON-NLS-1$ 
-		return name; 
+	public String getName() {
+		String fName = super.getFirstName();
+		String lName = super.getLastName();
+		if (fName == null) fName = "";
+		if (lName == null) lName = "";
+		return (fName + " " + lName).trim();
 	}
 }

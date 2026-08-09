@@ -25,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
@@ -67,6 +68,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 	private FixedLengthTextField tfDeliveryCharge;
 	private JTextField tfState;
 	private JTextField tfCellPhone;
+	private FixedLengthTextField tfLoyaltyNo;
 	private QwertyKeyPad qwertyKeyPad;
 
 	public boolean isKeypad;
@@ -110,6 +112,11 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCellPhone = new JTextField(30);
 		inputPanel.add(tfCellPhone, "cell 1 1"); //$NON-NLS-1$
 		// setPreferredSize(PosUIManager.getSize(800, 350));
+
+		JLabel lblLoyaltyNo = new JLabel(Messages.getString("CustomerForm.65")); //$NON-NLS-1$
+		tfLoyaltyNo = new FixedLengthTextField(30);
+		inputPanel.add(lblLoyaltyNo, "cell 0 2,alignx right"); //$NON-NLS-1$
+		inputPanel.add(tfLoyaltyNo, "cell 1 2"); //$NON-NLS-1$
 
 		JLabel lblFirstName = new JLabel(Messages.getString("CustomerForm.3")); //$NON-NLS-1$
 
@@ -174,6 +181,27 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 			}
 		});
 
+		tfLoyaltyNo.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				findCustomerByLoyaltyNo();
+			}
+		});
+
+		tfLoyaltyNo.addFocusListener(new FocusListener() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				findCustomerByLoyaltyNo();
+			}
+
+			@Override
+			public void focusGained(FocusEvent e) {
+
+			}
+		});
+
 		enableCustomerFields(false);
 		callOrderController();
 	}
@@ -182,6 +210,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		Vector<Component> order = new Vector<Component>();
 
 		order.add(tfCellPhone);
+		order.add(tfLoyaltyNo);
 		order.add(tfName);
 		// order.add(tfFirstName);
 		// order.add(tfLastName);
@@ -206,6 +235,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfZip.setEnabled(enable);
 		tfCellPhone.setEnabled(enable);
 		tfDeliveryCharge.setEnabled(enable);
+		tfLoyaltyNo.setEnabled(enable);
 	}
 
 	@Override
@@ -218,6 +248,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfZip.setEnabled(enable);
 		tfCellPhone.setEnabled(enable);
 		tfDeliveryCharge.setEnabled(enable);
+		tfLoyaltyNo.setEnabled(enable);
 	}
 
 	public void setFieldsEditable(boolean editable) {
@@ -229,6 +260,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfZip.setEditable(editable);
 		tfCellPhone.setEditable(editable);
 		tfDeliveryCharge.setEnabled(editable);
+		tfLoyaltyNo.setEditable(editable);
 	}
 
 	@Override
@@ -241,6 +273,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setText(""); //$NON-NLS-1$
 		tfZip.setText(""); //$NON-NLS-1$
 		tfCellPhone.setText("");//$NON-NLS-1$
+		tfLoyaltyNo.setText("");//$NON-NLS-1$
 		
 		Restaurant restaurant = Application.getInstance().getRestaurant();
 		tfDeliveryCharge.setText(restaurant.getDeliveryChargeAmount().toString()); //$NON-NLS-1$
@@ -254,6 +287,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCity.setText(customer.getCity()); // $NON-NLS-1$
 		tfZip.setText(customer.getZipCode()); // $NON-NLS-1$
 		tfCellPhone.setText(customer.getMobileNo());// $NON-NLS-1$
+		tfLoyaltyNo.setText(customer.getLoyaltyNo());// $NON-NLS-1$
 		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");//$NON-NLS-1$
 		setBean(customer);
 	}
@@ -289,6 +323,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfState.setText(customer.getState());
 		tfZip.setText(customer.getZipCode());
 		tfCellPhone.setText(customer.getMobileNo());
+		tfLoyaltyNo.setText(customer.getLoyaltyNo());
 		tfAddress.setText(customer.getAddress());
 		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");
 	}
@@ -297,12 +332,21 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 	protected boolean updateModel() throws IllegalModelStateException {
 		String mobile = tfCellPhone.getText();
 		String name = tfName.getText();
-		String fullName[] = name.split(" ");
-		String fname = fullName[0];
-		String lastName = name.substring(fname.length(), name.length());
+		String loyaltyNo = tfLoyaltyNo.getText();
 
-		if (StringUtils.isEmpty(mobile) && StringUtils.isEmpty(name)) {
-			POSMessageDialog.showError(null, Messages.getString("QuickCustomerForm.1")); //$NON-NLS-1$
+		String fname = "";
+		String lastName = "";
+		if (StringUtils.isNotEmpty(name)) {
+			name = name.trim();
+			String fullName[] = name.split(" ");
+			if (fullName.length > 0) {
+				fname = fullName[0];
+				lastName = name.substring(fname.length()).trim();
+			}
+		}
+
+		if (StringUtils.isEmpty(mobile) && StringUtils.isEmpty(name) && StringUtils.isEmpty(loyaltyNo)) {
+			POSMessageDialog.showError(null, Messages.getString("CustomerForm.60")); //$NON-NLS-1$
 			return false;
 		}
 		Customer customer = (Customer) getBean();
@@ -321,6 +365,7 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		// TODO:
 		customer.setZipCode(tfZip.getText());
 		customer.setMobileNo(tfCellPhone.getText());
+		customer.setLoyaltyNo(tfLoyaltyNo.getText());
 		customer.setDeliveryCharge(Double.parseDouble(tfDeliveryCharge.getText()));
 
 		return true;
@@ -404,5 +449,23 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 
 	public void setPhoneNo(String phoneNo) {
 		tfCellPhone.setText(phoneNo);
+	}
+
+	private void findCustomerByLoyaltyNo() {
+		String loyaltyNo = tfLoyaltyNo.getText();
+		if (StringUtils.isEmpty(loyaltyNo)) {
+			return;
+		}
+		
+		Customer currentCustomer = getBean();
+		if (currentCustomer != null && loyaltyNo.equals(currentCustomer.getLoyaltyNo())) {
+			return;
+		}
+
+		List<Customer> customers = CustomerDAO.getInstance().findByLoyaltyNo(loyaltyNo);
+		if (customers != null && !customers.isEmpty()) {
+			Customer customer = customers.get(0);
+			updateCustomer(customer);
+		}
 	}
 }
