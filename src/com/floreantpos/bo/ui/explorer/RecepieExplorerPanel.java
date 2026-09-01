@@ -1,11 +1,8 @@
 package com.floreantpos.bo.ui.explorer;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,20 +14,27 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+
+import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
 
 import com.floreantpos.Messages;
 import com.floreantpos.POSConstants;
 import com.floreantpos.bo.ui.BOMessageDialog;
+import com.floreantpos.model.MenuGroup;
 import com.floreantpos.model.MenuItem;
 import com.floreantpos.model.Recepie;
 import com.floreantpos.model.RecepieItem;
+import com.floreantpos.model.dao.MenuGroupDAO;
 import com.floreantpos.model.dao.MenuItemDAO;
 import com.floreantpos.model.dao.RecepieDAO;
 import com.floreantpos.model.dao.RecepieItemDAO;
@@ -42,7 +46,7 @@ import com.floreantpos.util.POSUtil;
 
 /**
  * Panel showing two linked tables:
- *  - Top: list of all Recepie (linked to MenuItems), with calculated total cost columns
+ *  - Top: list of all Recepie (linked to MenuItems), with calculated total cost columns and search panel
  *  - Bottom: RecepieItems for the selected Recepie, with calculated per-row price columns
  */
 public class RecepieExplorerPanel extends TransparentPanel {
@@ -60,6 +64,10 @@ public class RecepieExplorerPanel extends TransparentPanel {
 
 	/** Currently selected recipe (drives bottom table). */
 	private Recepie selectedRecepie = null;
+
+	// Search controls
+	private JTextField tfSearchName;
+	private JComboBox cbSearchGroup;
 
 	public RecepieExplorerPanel() {
 		initComponents();
@@ -128,6 +136,7 @@ public class RecepieExplorerPanel extends TransparentPanel {
 			BorderFactory.createEtchedBorder(),
 			Messages.getString("RecepieExplorerPanel.recepieTable.title"), //$NON-NLS-1$
 			TitledBorder.LEFT, TitledBorder.TOP));
+		topPanel.add(buildSearchForm(), BorderLayout.NORTH);
 		topPanel.add(new JScrollPane(recepieTable), BorderLayout.CENTER);
 		topPanel.add(createRecepieButtonPanel(), BorderLayout.SOUTH);
 
@@ -151,6 +160,84 @@ public class RecepieExplorerPanel extends TransparentPanel {
 		splitPane.setDividerSize(6);
 
 		add(splitPane, BorderLayout.CENTER);
+	}
+
+	private JPanel buildSearchForm() {
+		JPanel panel = new JPanel();
+		panel.setLayout(new MigLayout("", "[][]15[][]15[]", "[]")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+		tfSearchName = new JTextField(15);
+
+		cbSearchGroup = new JComboBox();
+		cbSearchGroup.addItem(Messages.getString("Explorer.all")); //$NON-NLS-1$
+		try {
+			List<MenuGroup> groups = MenuGroupDAO.getInstance().findAll();
+			for (MenuGroup g : groups) cbSearchGroup.addItem(g);
+		} catch (Exception ignored) {}
+
+		JButton searchBttn = new JButton(Messages.getString("MenuItemExplorer.3")); //$NON-NLS-1$
+		JButton resetBttn = new JButton(Messages.getString("Explorer.reset")); //$NON-NLS-1$
+
+		panel.add(new JLabel(Messages.getString("RecepieExplorerPanel.col.menuItem") + ":")); //$NON-NLS-1$
+		panel.add(tfSearchName);
+		panel.add(new JLabel(Messages.getString("InventoryItemExplorer.col.group") + ":")); //$NON-NLS-1$
+		panel.add(cbSearchGroup);
+		panel.add(searchBttn);
+		panel.add(resetBttn);
+
+		Border loweredetched = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+		TitledBorder title = BorderFactory.createTitledBorder(loweredetched, Messages.getString("Explorer.searchTitle")); //$NON-NLS-1$
+		title.setTitleJustification(TitledBorder.LEFT);
+		panel.setBorder(title);
+
+		ActionListener searchListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				searchRecepie();
+			}
+		};
+
+		searchBttn.addActionListener(searchListener);
+		tfSearchName.addActionListener(searchListener);
+
+		resetBttn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				tfSearchName.setText(""); //$NON-NLS-1$
+				cbSearchGroup.setSelectedIndex(0);
+				searchRecepie();
+			}
+		});
+
+		return panel;
+	}
+
+	private void searchRecepie() {
+		String text = tfSearchName.getText() == null ? "" : tfSearchName.getText().trim().toLowerCase(); //$NON-NLS-1$
+		Object group = cbSearchGroup.getSelectedItem();
+
+		List<Recepie> all = recepieDAO.findAll();
+		List<Recepie> filtered = new ArrayList<Recepie>();
+
+		for (Recepie r : all) {
+			if (r.getMenuItem() == null) continue;
+			if (!text.isEmpty()) {
+				String name = r.getMenuItem().getName() == null ? "" : r.getMenuItem().getName().toLowerCase(); //$NON-NLS-1$
+				if (!name.contains(text)) {
+					continue;
+				}
+			}
+			if (group instanceof MenuGroup) {
+				if (r.getMenuItem().getParent() == null || !r.getMenuItem().getParent().getId().equals(((MenuGroup) group).getId())) {
+					continue;
+				}
+			}
+			filtered.add(r);
+		}
+
+		recepieTableModel.setRows(filtered);
+		itemTableModel.setRows(new ArrayList<RecepieItem>());
+		selectedRecepie = null;
 	}
 
 	// ---- Recepie (top) button panel ----
