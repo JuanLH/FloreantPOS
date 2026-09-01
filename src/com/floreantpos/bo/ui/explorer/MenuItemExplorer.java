@@ -66,6 +66,7 @@ import com.floreantpos.ui.model.MenuItemForm;
 import com.floreantpos.ui.model.OrderTypeForm;
 import com.floreantpos.util.CurrencyUtil;
 import com.floreantpos.util.POSUtil;
+import com.floreantpos.bo.actions.RecepieExplorerAction;
 
 public class MenuItemExplorer extends TransparentPanel {
 
@@ -209,6 +210,7 @@ public class MenuItemExplorer extends TransparentPanel {
 		JButton deleteButton = explorerButton.getDeleteButton();
 		JButton duplicateButton = new JButton(POSConstants.DUPLICATE);
 		JButton updateStockAmount = new JButton(Messages.getString("MenuItemExplorer.6")); //$NON-NLS-1$
+		JButton btnUpdateCosts = new JButton(Messages.getString("MenuItemExplorer.updateCosts")); //$NON-NLS-1$
 
 		JButton btnChangeMenuGroup = new JButton("Change Menu Group");
 		JButton btnChangeOrderType = new JButton("Change Order Type");
@@ -390,6 +392,23 @@ public class MenuItemExplorer extends TransparentPanel {
 			}
 		});
 
+		btnUpdateCosts.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					int index = table.getSelectedRow();
+					if (index < 0) {
+						POSMessageDialog.showMessage(MenuItemExplorer.this, Messages.getString("MenuItemExplorer.selectItemFirst")); //$NON-NLS-1$
+						return;
+					}
+					int modelIndex = table.convertRowIndexToModel(index);
+					MenuItem menuItem = tableModel.getRow(modelIndex);
+					new RecepieExplorerAction(menuItem).actionPerformed(e);
+				} catch (Throwable x) {
+					BOMessageDialog.showError(POSConstants.ERROR_MESSAGE, x);
+				}
+			}
+		});
+
 		deleteButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -428,6 +447,7 @@ public class MenuItemExplorer extends TransparentPanel {
 		panel.add(duplicateButton);
 		panel.add(btnChangeMenuGroup);
 		panel.add(btnChangeOrderType);
+		panel.add(btnUpdateCosts);
 		return panel;
 	}
 

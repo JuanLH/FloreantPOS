@@ -26,6 +26,12 @@
 				<directory>resources</directory>
 			</resource>
 			<resource>
+				<directory>config</directory>
+			</resource>
+			<resource>
+				<directory>i18n</directory>
+			</resource>
+			<resource>
 				<directory>profiles/${build.profile.id}</directory>
 				<filtering>true</filtering>
 				<includes>
@@ -539,6 +545,10 @@
 	</dependencies>
 
 	<repositories>
+		<repository>
+			<id>project-local-repo</id>
+			<url>file://${project.basedir}/local-lib</url>
+		</repository>
 		<repository>
 			<id>orodev.net</id>
 			<url>http://orodev.net:8081/nexus/content/groups/public/</url>

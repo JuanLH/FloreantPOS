@@ -33,7 +33,7 @@ public abstract class BaseRecepieItem  implements Comparable, Serializable {
 
 	public static String REF = "RecepieItem"; //$NON-NLS-1$
 	public static String PROP_INVENTORY_ITEM = "inventoryItem"; //$NON-NLS-1$
-	public static String PROP_PERCENTAGE = "percentage"; //$NON-NLS-1$
+	public static String PROP_QUANTITY = "quantity"; //$NON-NLS-1$
 	public static String PROP_RECEPIE = "recepie"; //$NON-NLS-1$
 	public static String PROP_ID = "id"; //$NON-NLS-1$
 	public static String PROP_INVENTORY_DEDUCTABLE = "inventoryDeductable"; //$NON-NLS-1$
@@ -74,7 +74,7 @@ public abstract class BaseRecepieItem  implements Comparable, Serializable {
 	private java.lang.Integer id;
 
 	// fields
-		protected java.lang.Double percentage;
+		protected java.lang.Double quantity;
 		protected java.lang.Boolean inventoryDeductable;
 
 	// many to one
@@ -106,18 +106,18 @@ public abstract class BaseRecepieItem  implements Comparable, Serializable {
 
 
 	/**
-	 * Return the value associated with the column: PERCENTAGE
+	 * Return the value associated with the column: QUANTITY
 	 */
-	public java.lang.Double getPercentage () {
-									return percentage == null ? Double.valueOf(0) : percentage;
+	public java.lang.Double getQuantity () {
+									return quantity == null ? Double.valueOf(0) : quantity;
 					}
 
 	/**
-	 * Set the value related to the column: PERCENTAGE
-	 * @param percentage the PERCENTAGE value
+	 * Set the value related to the column: QUANTITY
+	 * @param quantity the QUANTITY value
 	 */
-	public void setPercentage (java.lang.Double percentage) {
-		this.percentage = percentage;
+	public void setQuantity (java.lang.Double quantity) {
+		this.quantity = quantity;
 	}
 
 

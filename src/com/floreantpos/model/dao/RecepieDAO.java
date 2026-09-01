@@ -1,23 +1,9 @@
-/**
- * ************************************************************************
- * * The contents of this file are subject to the MRPL 1.2
- * * (the  "License"),  being   the  Mozilla   Public  License
- * * Version 1.1  with a permitted attribution clause; you may not  use this
- * * file except in compliance with the License. You  may  obtain  a copy of
- * * the License at http://www.floreantpos.org/license.html
- * * Software distributed under the License  is  distributed  on  an "AS IS"
- * * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * * License for the specific  language  governing  rights  and  limitations
- * * under the License.
- * * The Original Code is FLOREANT POS.
- * * The Initial Developer of the Original Code is OROCUBE LLC
- * * All portions are Copyright (C) 2015 OROCUBE LLC
- * * All Rights Reserved.
- * ************************************************************************
- */
 package com.floreantpos.model.dao;
 
+import java.util.List;
 
+import com.floreantpos.model.MenuItem;
+import com.floreantpos.model.Recepie;
 
 public class RecepieDAO extends BaseRecepieDAO {
 
@@ -26,5 +12,37 @@ public class RecepieDAO extends BaseRecepieDAO {
 	 */
 	public RecepieDAO () {}
 
+	private static RecepieDAO instance;
 
-}
+	public static RecepieDAO getInstance() {
+		if (instance == null) {
+			instance = new RecepieDAO();
+		}
+		return instance;
+	}
+
+	/**
+	 * Finds the Recepie linked to a specific MenuItem.
+	 * @param menuItem the MenuItem to search for
+	 * @return the Recepie, or null if none exists yet
+	 */
+	@SuppressWarnings("unchecked")
+	public Recepie findByMenuItem(MenuItem menuItem) {
+		if (menuItem == null) return null;
+		org.hibernate.Session session = null;
+		try {
+			session = createNewSession();
+			java.util.List<Recepie> list = session
+				.createQuery("from Recepie where menuItem = :mi") //$NON-NLS-1$
+				.setParameter("mi", menuItem) //$NON-NLS-1$
+				.list();
+			if (list != null && !list.isEmpty()) {
+				return list.get(0);
+			}
+		} finally {
+			closeSession(session);
+		}
+		return null;
+	}
+
+}

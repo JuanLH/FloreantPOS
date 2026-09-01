@@ -69,7 +69,9 @@ public class PosWindow extends JFrame implements WindowListener {
 	private Timer autoLogoffTimer;
 
 	public PosWindow() {
-		setIconImage(Application.getApplicationIcon().getImage());
+		if (Application.getApplicationIcon() != null) {
+			setIconImage(Application.getApplicationIcon().getImage());
+		}
 		addWindowListener(this);
 
 		glassPane = new GlassPane();

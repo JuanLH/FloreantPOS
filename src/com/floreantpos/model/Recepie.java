@@ -50,4 +50,36 @@ public class Recepie extends BaseRecepie {
 		recepieItems.add(recepieItem);
 	}
 
+	/**
+	 * Returns the sum of (quantity * unitPurchasePrice) for all recipe items.
+	 * This is a calculated (transient) property — not persisted in the database.
+	 */
+	public double getTotalPurchaseCost() {
+		List<RecepieItem> items = getRecepieItems();
+		if (items == null) return 0.0;
+		double total = 0.0;
+		for (RecepieItem item : items) {
+			if (item.getInventoryItem() != null) {
+				total += item.getQuantity() * item.getInventoryItem().getUnitPurchasePrice();
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * Returns the sum of (quantity * unitSellingPrice) for all recipe items.
+	 * This is a calculated (transient) property — not persisted in the database.
+	 */
+	public double getTotalSellingCost() {
+		List<RecepieItem> items = getRecepieItems();
+		if (items == null) return 0.0;
+		double total = 0.0;
+		for (RecepieItem item : items) {
+			if (item.getInventoryItem() != null) {
+				total += item.getQuantity() * item.getInventoryItem().getUnitSellingPrice();
+			}
+		}
+		return total;
+	}
+
 }
