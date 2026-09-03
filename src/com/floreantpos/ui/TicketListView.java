@@ -95,11 +95,17 @@ public class TicketListView extends JPanel implements ITicketList {
 	}
 
 	public TicketListView(Integer customerId, boolean customerHistory) {
-		isCustomerHistoryOpen = customerHistory;
+		this.customerId = customerId;
+		this.isCustomerHistoryOpen = customerHistory;
 		setLayout(new BorderLayout());
 
 		createTicketTable();
-		updateTicketList();
+		if (customerId != null) {
+			updateCustomerTicketList(customerId);
+		}
+		else {
+			updateTicketList();
+		}
 		updateButtonStatus();
 	}
 
@@ -123,10 +129,10 @@ public class TicketListView extends JPanel implements ITicketList {
 		columnModel.getColumn(3).setPreferredWidth(100);
 
 		if (isCustomerHistoryOpen) {
-			columnModel.getColumnExt((1)).setVisible(false);
-			columnModel.getColumnExt((1)).setVisible(false);
-			columnModel.getColumnExt((5)).setVisible(false);
-			columnModel.getColumnExt((7)).setVisible(false);
+			columnModel.getColumnExt(1).setVisible(false);
+			columnModel.getColumnExt(4).setVisible(false);
+			columnModel.getColumnExt(5).setVisible(false);
+			columnModel.getColumnExt(7).setVisible(false);
 			createScrollPane();
 			return;
 		}
@@ -243,7 +249,12 @@ public class TicketListView extends JPanel implements ITicketList {
 			public void actionPerformed(ActionEvent e) {
 				if (tableModel.hasPrevious()) {
 					tableModel.setCurrentRowIndex(tableModel.getPreviousRowIndex());
-					TicketDAO.getInstance().loadTickets(tableModel);
+					if (customerId != null) {
+						TicketDAO.getInstance().loadCustomerTickets(customerId, tableModel);
+					}
+					else {
+						TicketDAO.getInstance().loadTickets(tableModel);
+					}
 				}
 				updateButtonStatus();
 
@@ -255,7 +266,12 @@ public class TicketListView extends JPanel implements ITicketList {
 			public void actionPerformed(ActionEvent e) {
 				if (tableModel.hasNext()) {
 					tableModel.setCurrentRowIndex(tableModel.getNextRowIndex());
-					TicketDAO.getInstance().loadTickets(tableModel);
+					if (customerId != null) {
+						TicketDAO.getInstance().loadCustomerTickets(customerId, tableModel);
+					}
+					else {
+						TicketDAO.getInstance().loadTickets(tableModel);
+					}
 				}
 				updateButtonStatus();
 			}
@@ -339,12 +355,12 @@ public class TicketListView extends JPanel implements ITicketList {
 			Application.getPosWindow().setGlassPaneVisible(true);
 
 			TicketListTableModel ticketListTableModel = getTableModel();
-
-			List<Ticket> tickets = TicketDAO.getInstance().findCustomerTickets(memberId, ticketListTableModel);
-
-			setTickets(tickets);
+			ticketListTableModel.setCurrentRowIndex(0);
+			ticketListTableModel.setNumRows(TicketDAO.getInstance().getNumCustomerTickets(memberId));
+			TicketDAO.getInstance().loadCustomerTickets(memberId, ticketListTableModel);
 
 			btnRefresh.setBlinking(false);
+			updateButtonStatus();
 
 			for (int i = 0; i < ticketUpdateListenerList.size(); i++) {
 				TicketListUpdateListener listener = ticketUpdateListenerList.get(i);

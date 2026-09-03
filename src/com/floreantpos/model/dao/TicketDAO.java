@@ -444,6 +444,44 @@ public class TicketDAO extends BaseTicketDAO {
 		}
 	}
 
+	public int getNumCustomerTickets(Integer customerId) {
+		Session session = null;
+		Criteria criteria = null;
+		try {
+			session = createNewSession();
+			criteria = session.createCriteria(getReferenceClass());
+			criteria.add(Restrictions.eq(Ticket.PROP_CUSTOMER_ID, customerId));
+
+			criteria.setProjection(Projections.rowCount());
+			Number rowCount = (Number) criteria.uniqueResult();
+			if (rowCount != null) {
+				return rowCount.intValue();
+			}
+			return 0;
+		} finally {
+			closeSession(session);
+		}
+	}
+
+	public void loadCustomerTickets(Integer customerId, PaginatedTableModel tableModel) {
+		Session session = null;
+		Criteria criteria = null;
+
+		try {
+			session = createNewSession();
+			criteria = session.createCriteria(getReferenceClass());
+			criteria.add(Restrictions.eq(Ticket.PROP_CUSTOMER_ID, customerId));
+			criteria.addOrder(getDefaultOrder());
+			criteria.setFirstResult(tableModel.getCurrentRowIndex());
+			criteria.setMaxResults(tableModel.getPageSize());
+			tableModel.setRows(criteria.list());
+			return;
+
+		} finally {
+			closeSession(session);
+		}
+	}
+
 	public List<Ticket> findPreviousCustomerTickets(Integer customerId, PaginatedTableModel tableModel, String filter) {
 		Session session = null;
 		Criteria criteria = null;

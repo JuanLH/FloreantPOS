@@ -69,6 +69,7 @@ public class DefaultCustomerListView extends CustomerSelector {
 	private POSTextField tfLoyaltyNo;
 	private POSTextField tfName;
 	private PosButton btnInfo;
+	private PosButton btnHistory;
 	protected Customer selectedCustomer;
 	private PosButton btnRemoveCustomer;
 
@@ -168,9 +169,11 @@ public class DefaultCustomerListView extends CustomerSelector {
 				selectedCustomer = customerTable.getSelectedCustomer();
 				if (selectedCustomer != null) {
 					btnInfo.setEnabled(true);
+					btnHistory.setEnabled(true);
 				}
 				else {
 					btnInfo.setEnabled(false);
+					btnHistory.setEnabled(false);
 				}
 			}
 		});
@@ -192,9 +195,14 @@ public class DefaultCustomerListView extends CustomerSelector {
 			}
 		});
 
-		PosButton btnHistory = new PosButton(Messages.getString("CustomerSelectionDialog.24")); //$NON-NLS-1$
-		btnHistory.setEnabled(true);
+		btnHistory = new PosButton(Messages.getString("CustomerSelectionDialog.24")); //$NON-NLS-1$
+		btnHistory.setEnabled(false);
 		panel.add(btnHistory, ""); //$NON-NLS-1$
+		btnHistory.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doShowCustomerHistory();
+			}
+		});
 
 		btnCreateNewCustomer = new PosButton(Messages.getString("CustomerSelectionDialog.25")); //$NON-NLS-1$
 		btnCreateNewCustomer.setFocusable(false);
@@ -434,6 +442,14 @@ public class DefaultCustomerListView extends CustomerSelector {
 				CustomerListTableModel model = (CustomerListTableModel) customerTable.getModel();
 				model.addItem(selectedCustomer);
 			}*/
+		}
+	}
+
+	protected void doShowCustomerHistory() {
+		Customer customer = getSelectedCustomer();
+		if (customer != null) {
+			CustomerHistoryDialog dialog = new CustomerHistoryDialog(customer);
+			dialog.open();
 		}
 	}
 

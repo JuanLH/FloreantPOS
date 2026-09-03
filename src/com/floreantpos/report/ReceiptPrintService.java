@@ -617,9 +617,16 @@ public class ReceiptPrintService {
 		StringBuilder ticketHeaderBuilder = new StringBuilder();
 		ticketHeaderBuilder.append("<html>"); //$NON-NLS-1$
 
-		beginRow(ticketHeaderBuilder);
-		addColumn(ticketHeaderBuilder, "*" + ticket.getOrderType() + "*"); //$NON-NLS-1$ //$NON-NLS-2$
-		endRow(ticketHeaderBuilder);
+		if (ticket.getOrderType() != null) {
+			beginRow(ticketHeaderBuilder);
+			addColumn(ticketHeaderBuilder, "*" + ticket.getOrderType() + "*"); //$NON-NLS-1$ //$NON-NLS-2$
+			endRow(ticketHeaderBuilder);
+		}
+		else if (ticket.getTicketType() != null) {
+			beginRow(ticketHeaderBuilder);
+			addColumn(ticketHeaderBuilder, "*" + ticket.getTicketType() + "*"); //$NON-NLS-1$ //$NON-NLS-2$
+			endRow(ticketHeaderBuilder);
+		}
 
 		beginRow(ticketHeaderBuilder);
 		addColumn(ticketHeaderBuilder, POSConstants.RECEIPT_REPORT_TERMINAL_LABEL + Application.getInstance().getTerminal().getId());
@@ -630,13 +637,20 @@ public class ReceiptPrintService {
 		endRow(ticketHeaderBuilder);
 
 		OrderType orderType = ticket.getOrderType();
-		if (orderType.isShowTableSelection() || orderType.isShowGuestSelection()) {//fix
+		if (orderType != null) {
+			if (orderType.isShowTableSelection() || orderType.isShowGuestSelection()) {//fix
+				beginRow(ticketHeaderBuilder);
+				addColumn(ticketHeaderBuilder, POSConstants.RECEIPT_REPORT_TABLE_NO_LABEL + ticket.getTableNumbers());
+				endRow(ticketHeaderBuilder);
+
+				beginRow(ticketHeaderBuilder);
+				addColumn(ticketHeaderBuilder, POSConstants.RECEIPT_REPORT_GUEST_NO_LABEL + ticket.getNumberOfGuests());
+				endRow(ticketHeaderBuilder);
+			}
+		}
+		else if (ticket.getTableNumbers() != null && !ticket.getTableNumbers().isEmpty()) {
 			beginRow(ticketHeaderBuilder);
 			addColumn(ticketHeaderBuilder, POSConstants.RECEIPT_REPORT_TABLE_NO_LABEL + ticket.getTableNumbers());
-			endRow(ticketHeaderBuilder);
-
-			beginRow(ticketHeaderBuilder);
-			addColumn(ticketHeaderBuilder, POSConstants.RECEIPT_REPORT_GUEST_NO_LABEL + ticket.getNumberOfGuests());
 			endRow(ticketHeaderBuilder);
 		}
 
