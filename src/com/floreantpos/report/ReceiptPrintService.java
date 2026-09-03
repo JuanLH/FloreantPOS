@@ -684,7 +684,7 @@ public class ReceiptPrintService {
 		}
 
 		//customer info section
-		if (orderType.isRequiredCustomerData()) {
+		if (orderType == null || orderType.isRequiredCustomerData()) {
 
 			String customerName = ticket.getProperty(Ticket.CUSTOMER_NAME);
 			String customerMobile = ticket.getProperty(Ticket.CUSTOMER_MOBILE);
@@ -700,7 +700,7 @@ public class ReceiptPrintService {
 					endRow(ticketHeaderBuilder);
 				}
 
-				if (StringUtils.isNotEmpty(ticket.getDeliveryAddress()) && ticket.getOrderType().isDelivery()) {
+				if (StringUtils.isNotEmpty(ticket.getDeliveryAddress()) && orderType != null && orderType.isDelivery()) {
 					beginRow(ticketHeaderBuilder);
 					addColumn(ticketHeaderBuilder, ticket.getDeliveryAddress());
 					endRow(ticketHeaderBuilder);
@@ -711,7 +711,7 @@ public class ReceiptPrintService {
 						endRow(ticketHeaderBuilder);
 					}
 				}
-				else {
+				else if (orderType != null && !orderType.isDelivery()) {
 					beginRow(ticketHeaderBuilder);
 					addColumn(ticketHeaderBuilder, Messages.getString("ReceiptPrintService.111")); //$NON-NLS-1$
 					endRow(ticketHeaderBuilder);
