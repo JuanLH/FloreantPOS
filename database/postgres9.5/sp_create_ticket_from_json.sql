@@ -19,6 +19,9 @@
 --   Q6  Modifiers/Add-ons : All modifiers go to TICKET_ITEM_MODIFIER_RELATION.
 --                           Pass "is_addon": true to route to
 --                           TICKET_ITEM_ADDON_RELATION instead.
+--   Q7  Stock validation  : Pre-validates item existence & stock availability,
+--                           and decrements MENU_ITEM.STOCK_AMOUNT prior to
+--                           inserting the ticket.
 --
 -- Usage:
 --   SELECT sp_create_ticket_from_json(
@@ -42,9 +45,9 @@ CREATE OR REPLACE FUNCTION sp_create_ticket_from_json(
     -- -------------------------------------------------------------------------
     -- Optional system-context parameters (leave NULL for headless/online orders)
     -- -------------------------------------------------------------------------
-    p_owner_id    INTEGER DEFAULT NULL,  -- FK -> USER.ID  (server / cashier)
-    p_terminal_id INTEGER DEFAULT NULL,  -- FK -> TERMINAL.ID
-    p_shift_id    INTEGER DEFAULT NULL   -- FK -> SHIFT.ID
+    p_owner_id    INTEGER DEFAULT 1,  -- FK -> USER.ID  (server / cashier)
+    p_terminal_id INTEGER DEFAULT 222,  -- FK -> TERMINAL.ID
+    p_shift_id    INTEGER DEFAULT 1   -- FK -> SHIFT.ID
 )
 RETURNS INTEGER   -- Returns the newly generated TICKET.ID
 LANGUAGE plpgsql
@@ -156,6 +159,15 @@ DECLARE
     -- -------------------------------------------------------------------------
     v_table_num         INTEGER;                    -- each entry in p_order_json -> 'table_numbers'
 
+    -- -------------------------------------------------------------------------
+    -- Stock validation and adjustment variables
+    -- -------------------------------------------------------------------------
+    v_val_rec           RECORD;                     -- aggregated item loop record
+    v_mi_id             INTEGER;                    -- MENU_ITEM.ID
+    v_mi_name           TEXT;                       -- MENU_ITEM.NAME
+    v_mi_stock          DOUBLE PRECISION;           -- MENU_ITEM.STOCK_AMOUNT
+    v_mi_disable_stock  BOOLEAN;                    -- MENU_ITEM.DISABLE_WHEN_STOCK_AMOUNT_IS_ZERO
+
 -- =============================================================================
 -- FUNCTION BODY
 -- =============================================================================
@@ -167,8 +179,16 @@ BEGIN
     v_create_date     := NOW();
     v_creation_hour   := EXTRACT(HOUR FROM NOW())::INTEGER;
 
-    -- 16-char GLOBAL_ID generated from MD5 of current timestamp + random noise
-    v_global_id       := LEFT(MD5(NOW()::TEXT || RANDOM()::TEXT), 16);
+    -- 16-char GLOBAL_ID: check for idempotency if caller provided global_id
+    IF p_order_json->>'global_id' IS NOT NULL AND p_order_json->>'global_id' <> '' THEN
+        v_global_id := LEFT(p_order_json->>'global_id', 16);
+        SELECT ID INTO v_ticket_id FROM TICKET WHERE GLOBAL_ID = v_global_id LIMIT 1;
+        IF v_ticket_id IS NOT NULL THEN
+            RETURN v_ticket_id;
+        END IF;
+    ELSE
+        v_global_id := LEFT(MD5(NOW()::TEXT || RANDOM()::TEXT), 16);
+    END IF;
 
     v_order_type      := p_order_json->>'order_type';           -- e.g. 'Delivery', 'Dine In'
     v_num_guests      := (p_order_json->>'number_of_guests')::INTEGER;
@@ -284,9 +304,75 @@ BEGIN
     END IF; -- END delivery address block
 
     -- =========================================================================
-    -- STEP 4 — Insert TICKET header row
+    -- STEP 4 — Stock validation and inventory adjustment
+    --   Validates that:
+    --     1. The order contains at least one item in the 'items' array.
+    --     2. Each referenced MENU_ITEM exists in the database.
+    --     3. Items with DISABLE_WHEN_STOCK_AMOUNT_IS_ZERO = TRUE have sufficient
+    --        stock available (aggregated across all ticket lines for that item).
+    --   If sufficient stock is available:
+    --     - Decrements MENU_ITEM.STOCK_AMOUNT for stock-tracked items.
+    --   If any item fails validation:
+    --     - Raises an exception and aborts the entire transaction before the
+    --       ticket is created.
+    --   Row locks (FOR UPDATE) are acquired in ascending menu_item_id order to
+    --   guarantee deadlock-free concurrent execution.
+    -- =========================================================================
+    IF COALESCE(p_order_json->'items', p_order_json->'ticket_items') IS NULL 
+       OR jsonb_array_length(COALESCE(p_order_json->'items', p_order_json->'ticket_items')) = 0 THEN
+        RAISE EXCEPTION 'Order contains no items';
+    END IF;
+
+    FOR v_val_rec IN
+        SELECT
+            COALESCE(item->>'item_id', item->>'menu_item_id', item->>'id')::INTEGER AS menu_item_id,
+            COALESCE(item->>'name', 'Item')   AS item_name,
+            SUM(COALESCE((item->>'quantity')::DOUBLE PRECISION, 1.0)) AS total_qty
+        FROM jsonb_array_elements(COALESCE(p_order_json->'items', p_order_json->'ticket_items')) AS item
+        WHERE COALESCE(item->>'item_id', item->>'menu_item_id', item->>'id') IS NOT NULL 
+          AND COALESCE(item->>'item_id', item->>'menu_item_id', item->>'id') <> ''
+        GROUP BY COALESCE(item->>'item_id', item->>'menu_item_id', item->>'id')::INTEGER, COALESCE(item->>'name', 'Item')
+        ORDER BY COALESCE(item->>'item_id', item->>'menu_item_id', item->>'id')::INTEGER ASC
+    LOOP
+        IF v_val_rec.total_qty <= 0.0 THEN
+            RAISE EXCEPTION 'Invalid quantity % for item ID % ("%")',
+                v_val_rec.total_qty, v_val_rec.menu_item_id, v_val_rec.item_name;
+        END IF;
+
+        -- Lock the row and fetch current stock and configuration
+        SELECT ID, NAME, STOCK_AMOUNT, DISABLE_WHEN_STOCK_AMOUNT_IS_ZERO
+        INTO v_mi_id, v_mi_name, v_mi_stock, v_mi_disable_stock
+        FROM MENU_ITEM
+        WHERE ID = v_val_rec.menu_item_id
+        FOR UPDATE;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Menu item with ID % ("%") not found in MENU_ITEM table',
+                v_val_rec.menu_item_id, v_val_rec.item_name;
+        END IF;
+
+        -- Validate stock availability for items with stock enforcement enabled
+        IF COALESCE(v_mi_disable_stock, FALSE) = TRUE THEN
+            IF COALESCE(v_mi_stock, 0.0) < v_val_rec.total_qty THEN
+                RAISE EXCEPTION 'Insufficient stock for menu item "%" (ID %). Available: %, requested: %',
+                    v_mi_name, v_mi_id, COALESCE(v_mi_stock, 0.0), v_val_rec.total_qty;
+            END IF;
+        END IF;
+
+        -- Adjust stock in MENU_ITEM table:
+        -- Decrement stock if stock tracking is enabled or positive stock exists
+        IF COALESCE(v_mi_disable_stock, FALSE) = TRUE OR COALESCE(v_mi_stock, 0.0) > 0.0 THEN
+            UPDATE MENU_ITEM
+            SET STOCK_AMOUNT = GREATEST(0.0, COALESCE(STOCK_AMOUNT, 0.0) - v_val_rec.total_qty)
+            WHERE ID = v_mi_id;
+        END IF;
+
+    END LOOP;
+
+    -- =========================================================================
+    -- STEP 5 — Insert TICKET header row
     --   Financial amounts (SUB_TOTAL, TOTAL_TAX, TOTAL_PRICE) are seeded at
-    --   0.0 here and updated with the real totals in STEP 9 after all items
+    --   0.0 here and updated with the real totals in STEP 10 after all items
     --   have been processed.
     -- =========================================================================
     INSERT INTO TICKET (
@@ -361,16 +447,16 @@ BEGIN
     END IF;
 
     -- =========================================================================
-    -- STEP 5 — Outer loop: iterate over items[]
+    -- STEP 6 — Outer loop: iterate over items[]
     -- =========================================================================
     FOR v_item_rec IN
-        SELECT jsonb_array_elements(p_order_json->'items')
+        SELECT jsonb_array_elements(COALESCE(p_order_json->'items', p_order_json->'ticket_items'))
     LOOP
 
         -- ---------------------------------------------------------------------
         -- 5a. Extract per-item scalar fields from the JSON element
         -- ---------------------------------------------------------------------
-        v_item_menu_item_id  := (v_item_rec->>'menu_item_id')::INTEGER;
+        v_item_menu_item_id  := COALESCE(v_item_rec->>'item_id', v_item_rec->>'menu_item_id', v_item_rec->>'id')::INTEGER;
         v_item_name          := v_item_rec->>'name';
         v_item_qty           := COALESCE((v_item_rec->>'quantity')::DOUBLE PRECISION, 1.0);
         v_item_count         := ROUND(v_item_qty)::INTEGER;
@@ -469,7 +555,7 @@ BEGIN
             FALSE,      -- treat_as_seat
             FALSE,      -- fractional_unit
             FALSE,      -- printed_to_kitchen : not yet sent to kitchen printer
-            FALSE,      -- stock_amount_adjusted
+            TRUE,       -- stock_amount_adjusted : adjusted in STEP 4 before ticket creation
             FALSE,      -- pizza_type
             'OPEN'
         )
@@ -483,7 +569,7 @@ BEGIN
         v_ticket_total    := v_ticket_total    + v_item_total;
 
         -- =====================================================================
-        -- STEP 6 — Inner loop: modifiers for this item
+        -- STEP 7 — Inner loop: modifiers for this item
         -- =====================================================================
         FOR v_mod_rec IN
             SELECT jsonb_array_elements(v_item_rec->'modifiers')
@@ -492,7 +578,7 @@ BEGIN
             -- -----------------------------------------------------------------
             -- 6a. Extract per-modifier scalar fields
             -- -----------------------------------------------------------------
-            v_mod_modifier_id := (v_mod_rec->>'modifier_id')::INTEGER;
+            v_mod_modifier_id := COALESCE(v_mod_rec->>'modifier_id', v_mod_rec->>'item_id', v_mod_rec->>'id')::INTEGER;
             v_mod_name        := v_mod_rec->>'name';
             v_mod_unit_price  := COALESCE((v_mod_rec->>'unit_price')::DOUBLE PRECISION, 0.0);
             v_mod_tax_rate    := COALESCE((v_mod_rec->>'tax_rate')::DOUBLE PRECISION, 0.0);
@@ -576,7 +662,7 @@ BEGIN
         END LOOP; -- END modifiers inner loop
 
         -- =====================================================================
-        -- STEP 7 — Inner loop: cooking instructions for this item
+        -- STEP 8 — Inner loop: cooking instructions for this item
         -- =====================================================================
         FOR v_ci_rec IN
             SELECT jsonb_array_elements(v_item_rec->'cooking_instructions')
@@ -604,7 +690,7 @@ BEGIN
     END LOOP; -- END items outer loop
 
     -- =========================================================================
-    -- STEP 8 — Insert table numbers into TICKET_TABLE_NUM
+    -- STEP 9 — Insert table numbers into TICKET_TABLE_NUM
     -- =========================================================================
     FOR v_table_num IN
         SELECT jsonb_array_elements_text(p_order_json->'table_numbers')::INTEGER
@@ -614,7 +700,7 @@ BEGIN
     END LOOP;
 
     -- =========================================================================
-    -- STEP 9 — Update TICKET row with the fully computed totals
+    -- STEP 10 — Update TICKET row with the fully computed totals
     -- =========================================================================
     UPDATE TICKET
     SET
@@ -627,7 +713,7 @@ BEGIN
         ID = v_ticket_id;
 
     -- =========================================================================
-    -- STEP 10 — Notify FloreantPOS of data change via DATA_UPDATE_INFO
+    -- STEP 11 — Notify FloreantPOS of data change via DATA_UPDATE_INFO
     --   FloreantPOS uses this table to detect changes and sync terminal data.
     -- =========================================================================
     UPDATE DATA_UPDATE_INFO
@@ -635,7 +721,7 @@ BEGIN
     WHERE  ID = (SELECT MIN(ID) FROM DATA_UPDATE_INFO);
 
     -- =========================================================================
-    -- STEP 11 — Return the new TICKET.ID to the calling API
+    -- STEP 12 — Return the new TICKET.ID to the calling API
     -- =========================================================================
     RETURN v_ticket_id;
 
