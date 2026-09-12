@@ -73,6 +73,7 @@ import com.floreantpos.main.Application;
 import com.floreantpos.model.MenuGroup;
 import com.floreantpos.model.MenuItem;
 import com.floreantpos.model.MenuItemModifierGroup;
+import com.floreantpos.model.MenuItemIngredient;
 import com.floreantpos.model.MenuItemShift;
 import com.floreantpos.model.OrderType;
 import com.floreantpos.model.PrinterGroup;
@@ -146,6 +147,10 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 	// End of variables declaration//GEN-END:variables
 	private List<MenuItemModifierGroup> menuItemModifierGroups;
 	private MenuItemMGListModel menuItemMGListModel;
+	private List<MenuItemIngredient> menuItemIngredients;
+	private MenuItemIngredientTableModel menuItemIngredientTableModel;
+	private javax.swing.JTable tableMenuItemIngredients;
+	private javax.swing.JPanel tabIngredients;
 	private JLabel lblImagePreview;
 	private JButton btnClearImage;
 	private JCheckBox cbShowTextWithImage;
@@ -188,6 +193,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 		cbTaxGroup.setModel(new ComboBoxModel(taxeGroups));
 
 		menuItemModifierGroups = menuItem.getMenuItemModiferGroups();
+		menuItemIngredients = menuItem.getMenuItemIngredients();
 		shiftTable.setModel(shiftTableModel = new ShiftTableModel(menuItem.getShifts()));
 		priceTable.setModel(priceTableModel = new PriceByOrderTypeTableModel(menuItem.getProperties()));
 
@@ -540,6 +546,39 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 
 		tabbedPane.addTab(com.floreantpos.POSConstants.MODIFIER_GROUPS, tabModifier);
 
+		tabIngredients = new javax.swing.JPanel(new BorderLayout(5, 5));
+		tableMenuItemIngredients = new javax.swing.JTable();
+		menuItemIngredientTableModel = new MenuItemIngredientTableModel();
+		tableMenuItemIngredients.setModel(menuItemIngredientTableModel);
+		tableMenuItemIngredients.setDefaultRenderer(Object.class, new com.floreantpos.ui.PosTableRenderer());
+		tabIngredients.add(new javax.swing.JScrollPane(tableMenuItemIngredients), BorderLayout.CENTER);
+
+		javax.swing.JPanel pnlIngredientButtons = new javax.swing.JPanel();
+		JButton btnAddIngredient = new JButton(com.floreantpos.POSConstants.ADD);
+		btnAddIngredient.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				addMenuItemIngredient();
+			}
+		});
+		JButton btnEditIngredient = new JButton(com.floreantpos.POSConstants.EDIT);
+		btnEditIngredient.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				editMenuItemIngredient();
+			}
+		});
+		JButton btnDeleteIngredient = new JButton(com.floreantpos.POSConstants.DELETE);
+		btnDeleteIngredient.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				deleteMenuItemIngredient();
+			}
+		});
+		pnlIngredientButtons.add(btnAddIngredient);
+		pnlIngredientButtons.add(btnEditIngredient);
+		pnlIngredientButtons.add(btnDeleteIngredient);
+		tabIngredients.add(pnlIngredientButtons, BorderLayout.SOUTH);
+
+		tabbedPane.addTab(com.floreantpos.POSConstants.INGREDIENTS, tabIngredients);
+
 		btnDeleteShift.setText(com.floreantpos.POSConstants.DELETE_SHIFT);
 
 		btnAddShift.setText(com.floreantpos.POSConstants.ADD_SHIFT);
@@ -780,6 +819,81 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 		}
 	}
 
+	private void addMenuItemIngredient() {
+		try {
+			MenuItemIngredientForm form = new MenuItemIngredientForm();
+			com.floreantpos.ui.dialog.BeanEditorDialog dialog = new com.floreantpos.ui.dialog.BeanEditorDialog(com.floreantpos.util.POSUtil.getBackOfficeWindow(), form);
+			dialog.open();
+			if (!dialog.isCanceled()) {
+				MenuItemIngredient itemIngredient = (MenuItemIngredient) form.getBean();
+				if (itemIngredient == null || itemIngredient.getIngredient() == null) {
+					return;
+				}
+
+				if (menuItemIngredients != null) {
+					for (MenuItemIngredient existing : menuItemIngredients) {
+						if (existing.getIngredient() != null && 
+							existing.getIngredient().getId() != null &&
+							existing.getIngredient().getId().equals(itemIngredient.getIngredient().getId())) {
+							com.floreantpos.ui.dialog.POSMessageDialog.showError(Application.getPosWindow(), com.floreantpos.POSConstants.INGREDIENT_ALREADY_ADDED);
+							return;
+						}
+					}
+				}
+
+				menuItemIngredientTableModel.add(itemIngredient);
+			}
+		} catch (Exception x) {
+			com.floreantpos.swing.MessageDialog.showError(com.floreantpos.POSConstants.ERROR_MESSAGE, x);
+		}
+	}
+
+	private void editMenuItemIngredient() {
+		try {
+			int index = tableMenuItemIngredients.getSelectedRow();
+			if (index < 0) {
+				return;
+			}
+			MenuItemIngredient itemIngredient = menuItemIngredientTableModel.get(index);
+			if (itemIngredient == null) {
+				return;
+			}
+			MenuItemIngredientForm form = new MenuItemIngredientForm(itemIngredient);
+			com.floreantpos.ui.dialog.BeanEditorDialog dialog = new com.floreantpos.ui.dialog.BeanEditorDialog(com.floreantpos.util.POSUtil.getBackOfficeWindow(), form);
+			dialog.open();
+			if (!dialog.isCanceled()) {
+				if (menuItemIngredients != null) {
+					for (int i = 0; i < menuItemIngredients.size(); i++) {
+						if (i != index) {
+							MenuItemIngredient other = menuItemIngredients.get(i);
+							if (other.getIngredient() != null && 
+								other.getIngredient().getId() != null &&
+								other.getIngredient().getId().equals(itemIngredient.getIngredient().getId())) {
+								com.floreantpos.ui.dialog.POSMessageDialog.showError(Application.getPosWindow(), com.floreantpos.POSConstants.INGREDIENT_ALREADY_ADDED);
+								return;
+							}
+						}
+					}
+				}
+				menuItemIngredientTableModel.fireTableRowsUpdated(index, index);
+			}
+		} catch (Exception x) {
+			com.floreantpos.swing.MessageDialog.showError(com.floreantpos.POSConstants.ERROR_MESSAGE, x);
+		}
+	}
+
+	private void deleteMenuItemIngredient() {
+		try {
+			int index = tableMenuItemIngredients.getSelectedRow();
+			if (index < 0) {
+				return;
+			}
+			menuItemIngredientTableModel.remove(index);
+		} catch (Exception x) {
+			com.floreantpos.swing.MessageDialog.showError(com.floreantpos.POSConstants.ERROR_MESSAGE, x);
+		}
+	}
+
 	@Override
 	public boolean save() {
 		try {
@@ -807,6 +921,18 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 			menuItem = (MenuItem) session.merge(menuItem);
 			Hibernate.initialize(menuItem.getMenuItemModiferGroups());
 			session.close();
+		}
+
+		if (menuItem.getId() != null && !Hibernate.isInitialized(menuItem.getMenuItemIngredients())) {
+			MenuItemDAO dao = new MenuItemDAO();
+			Session session = dao.getSession();
+			menuItem = (MenuItem) session.merge(menuItem);
+			Hibernate.initialize(menuItem.getMenuItemIngredients());
+			session.close();
+		}
+		menuItemIngredients = menuItem.getMenuItemIngredients();
+		if (menuItemIngredientTableModel != null) {
+			menuItemIngredientTableModel.fireTableDataChanged();
 		}
 
 		//	terminalList.selectItems(menuItem.getTerminals());
@@ -893,6 +1019,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 		} catch (Exception x) {
 		}
 		menuItem.setMenuItemModiferGroups(menuItemModifierGroups);
+		menuItem.setMenuItemIngredients(menuItemIngredients);
 		menuItem.setShifts(shiftTableModel.getShifts());
 
 		int tabCount = tabbedPane.getTabCount();
@@ -984,6 +1111,82 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 					return Integer.valueOf(menuItemModifierGroup.getMaxQuantity());
 			}
 			return null;
+		}
+	}
+
+	class MenuItemIngredientTableModel extends AbstractTableModel {
+		String[] cn = { com.floreantpos.POSConstants.NAME, com.floreantpos.POSConstants.DESCRIPTION, com.floreantpos.POSConstants.CAN_BE_REMOVED };
+
+		MenuItemIngredientTableModel() {
+		}
+
+		public MenuItemIngredient get(int index) {
+			if (menuItemIngredients == null || index < 0 || index >= menuItemIngredients.size()) {
+				return null;
+			}
+			return menuItemIngredients.get(index);
+		}
+
+		public void add(MenuItemIngredient ingredient) {
+			if (menuItemIngredients == null) {
+				menuItemIngredients = new ArrayList<MenuItemIngredient>();
+			}
+			menuItemIngredients.add(ingredient);
+			fireTableDataChanged();
+		}
+
+		public void remove(int index) {
+			if (menuItemIngredients == null || index < 0 || index >= menuItemIngredients.size()) {
+				return;
+			}
+			menuItemIngredients.remove(index);
+			fireTableDataChanged();
+		}
+
+		public int getRowCount() {
+			if (menuItemIngredients == null) {
+				return 0;
+			}
+			return menuItemIngredients.size();
+		}
+
+		public int getColumnCount() {
+			return cn.length;
+		}
+
+		@Override
+		public String getColumnName(int column) {
+			return cn[column];
+		}
+
+		@Override
+		public Class<?> getColumnClass(int columnIndex) {
+			if (columnIndex == 2) {
+				return Boolean.class;
+			}
+			return String.class;
+		}
+
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			if (menuItemIngredients == null || rowIndex >= menuItemIngredients.size()) {
+				return ""; //$NON-NLS-1$
+			}
+			MenuItemIngredient itemIngredient = menuItemIngredients.get(rowIndex);
+			if (itemIngredient.getIngredient() == null) {
+				return ""; //$NON-NLS-1$
+			}
+
+			switch (columnIndex) {
+				case 0:
+					return itemIngredient.getIngredient().getName();
+
+				case 1:
+					return itemIngredient.getIngredient().getDescription() != null ? itemIngredient.getIngredient().getDescription() : ""; //$NON-NLS-1$
+
+				case 2:
+					return itemIngredient.isCanBeRemoved();
+			}
+			return ""; //$NON-NLS-1$
 		}
 	}
 

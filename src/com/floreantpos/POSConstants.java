@@ -491,4 +491,16 @@ public class POSConstants {
 	public static final String RECEIPT_REPORT_PAIDAMOUNT_LABEL = Messages.getString("RECEIPT_REPORT_PAIDAMOUNT_LABEL"); //$NON-NLS-1$
 	public static final String RECEIPT_REPORT_DUEAMOUNT_LABEL = Messages.getString("RECEIPT_REPORT_DUEAMOUNT_LABEL"); //$NON-NLS-1$
 	public static final String RECEIPT_REPORT_CHANGEAMOUNT_LABEL = Messages.getString("RECEIPT_REPORT_CHANGEAMOUNT_LABEL"); //$NON-NLS-1$
+
+	public static final String INGREDIENTS = Messages.getString("POSConstants.INGREDIENTS"); //$NON-NLS-1$
+	public static final String INGREDIENT = Messages.getString("POSConstants.INGREDIENT"); //$NON-NLS-1$
+	public static final String NEW_INGREDIENT = Messages.getString("POSConstants.NEW_INGREDIENT"); //$NON-NLS-1$
+	public static final String EDIT_INGREDIENT = Messages.getString("POSConstants.EDIT_INGREDIENT"); //$NON-NLS-1$
+	public static final String INGREDIENT_NAME = Messages.getString("POSConstants.INGREDIENT_NAME"); //$NON-NLS-1$
+	public static final String INGREDIENT_NAME_REQUIRED = Messages.getString("POSConstants.INGREDIENT_NAME_REQUIRED"); //$NON-NLS-1$
+	public static final String INGREDIENT_NAME_EXISTS = Messages.getString("POSConstants.INGREDIENT_NAME_EXISTS"); //$NON-NLS-1$
+	public static final String INGREDIENT_ALREADY_ADDED = Messages.getString("POSConstants.INGREDIENT_ALREADY_ADDED"); //$NON-NLS-1$
+	public static final String NO_INGREDIENTS_AVAILABLE = Messages.getString("POSConstants.NO_INGREDIENTS_AVAILABLE"); //$NON-NLS-1$
+	public static final String USER_CAN_REMOVE_INGREDIENT = Messages.getString("POSConstants.USER_CAN_REMOVE_INGREDIENT"); //$NON-NLS-1$
+	public static final String CAN_BE_REMOVED = Messages.getString("POSConstants.CAN_BE_REMOVED"); //$NON-NLS-1$
 }

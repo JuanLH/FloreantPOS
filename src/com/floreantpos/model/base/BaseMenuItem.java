@@ -112,6 +112,7 @@ public abstract class BaseMenuItem  implements Comparable, Serializable {
 	private java.util.List<com.floreantpos.model.MenuItemShift> shifts;
 	private java.util.List<com.floreantpos.model.Discount> discounts;
 	private java.util.List<com.floreantpos.model.MenuItemModifierGroup> menuItemModiferGroups;
+	private java.util.List<com.floreantpos.model.MenuItemIngredient> menuItemIngredients;
 	private java.util.List<com.floreantpos.model.Terminal> terminals;
 	private java.util.Map<String,String> properties;
 	private java.util.List<com.floreantpos.model.OrderType> orderTypeList;
@@ -643,6 +644,26 @@ public abstract class BaseMenuItem  implements Comparable, Serializable {
 	public void addTomenuItemModiferGroups (com.floreantpos.model.MenuItemModifierGroup menuItemModifierGroup) {
 		if (null == getMenuItemModiferGroups()) setMenuItemModiferGroups(new java.util.ArrayList<com.floreantpos.model.MenuItemModifierGroup>());
 		getMenuItemModiferGroups().add(menuItemModifierGroup);
+	}
+
+	/**
+	 * Return the value associated with the column: menuItemIngredients
+	 */
+	public java.util.List<com.floreantpos.model.MenuItemIngredient> getMenuItemIngredients () {
+		return menuItemIngredients;
+	}
+
+	/**
+	 * Set the value related to the column: menuItemIngredients
+	 * @param menuItemIngredients the menuItemIngredients value
+	 */
+	public void setMenuItemIngredients (java.util.List<com.floreantpos.model.MenuItemIngredient> menuItemIngredients) {
+		this.menuItemIngredients = menuItemIngredients;
+	}
+
+	public void addTomenuItemIngredients (com.floreantpos.model.MenuItemIngredient menuItemIngredient) {
+		if (null == getMenuItemIngredients()) setMenuItemIngredients(new java.util.ArrayList<com.floreantpos.model.MenuItemIngredient>());
+		getMenuItemIngredients().add(menuItemIngredient);
 	}
 
 

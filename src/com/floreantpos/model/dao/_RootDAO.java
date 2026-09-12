@@ -45,6 +45,8 @@ import com.floreantpos.model.EmployeeInOutHistory;
 import com.floreantpos.model.GlobalConfig;
 import com.floreantpos.model.Gratuity;
 import com.floreantpos.model.GuestCheckPrint;
+import com.floreantpos.model.Ingredient;
+import com.floreantpos.model.MenuItemIngredient;
 import com.floreantpos.model.InventoryGroup;
 import com.floreantpos.model.InventoryItem;
 import com.floreantpos.model.InventoryLocation;
@@ -136,6 +138,8 @@ public abstract class _RootDAO extends com.floreantpos.model.dao._BaseRootDAO {
 		configuration.addClass(MenuGroup.class);
 		configuration.addClass(MenuItem.class);
 		configuration.addClass(MenuItemModifierGroup.class);
+		configuration.addClass(Ingredient.class);
+		configuration.addClass(MenuItemIngredient.class);
 		configuration.addClass(MenuItemShift.class);
 		configuration.addClass(MenuModifier.class);
 		configuration.addClass(ModifierGroup.class);

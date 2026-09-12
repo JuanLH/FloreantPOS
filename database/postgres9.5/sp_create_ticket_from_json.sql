@@ -466,6 +466,7 @@ BEGIN
         v_item_tax_rate      := COALESCE((v_item_rec->>'tax_rate')::DOUBLE PRECISION, 0.0);
         v_item_seat_number   := (v_item_rec->>'seat_number')::INTEGER;
 
+
         -- Reset per-item inner counters
         v_modifier_subtotal := 0.0;
         v_mod_list_order    := 0;
