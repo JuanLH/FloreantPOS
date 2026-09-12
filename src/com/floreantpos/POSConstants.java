@@ -503,4 +503,6 @@ public class POSConstants {
 	public static final String NO_INGREDIENTS_AVAILABLE = Messages.getString("POSConstants.NO_INGREDIENTS_AVAILABLE"); //$NON-NLS-1$
 	public static final String USER_CAN_REMOVE_INGREDIENT = Messages.getString("POSConstants.USER_CAN_REMOVE_INGREDIENT"); //$NON-NLS-1$
 	public static final String CAN_BE_REMOVED = Messages.getString("POSConstants.CAN_BE_REMOVED"); //$NON-NLS-1$
+	public static final String IS_ADDED_BY_DEFAULT = Messages.getString("POSConstants.IS_ADDED_BY_DEFAULT"); //$NON-NLS-1$
+	public static final String ADDED_BY_DEFAULT = Messages.getString("POSConstants.ADDED_BY_DEFAULT"); //$NON-NLS-1$
 }

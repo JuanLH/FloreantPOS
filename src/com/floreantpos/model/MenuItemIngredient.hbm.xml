@@ -7,6 +7,7 @@
     </id>
     
     <property column="CAN_BE_REMOVED" name="canBeRemoved" type="java.lang.Boolean"/>
+    <property column="IS_ADDED_BY_DEFAULT" name="isAddedByDefault" type="java.lang.Boolean"/>
     <many-to-one class="com.floreantpos.model.Ingredient" column="INGREDIENT_ID" lazy="false" name="ingredient"/>
     <many-to-one class="com.floreantpos.model.MenuItem" column="MENUITEM_ID" lazy="false" name="menuItem"/>
   </class>

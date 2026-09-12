@@ -164,4 +164,35 @@ public class MenuItemIngredientAssociationTest {
 		assertFalse("isCanBeRemoved must guard against null and return false", mii.isCanBeRemoved());
 		assertFalse("getCanBeRemoved must guard against null and return false", mii.getCanBeRemoved());
 	}
+
+	@Test
+	public void testIsAddedByDefaultDefaultIsTrue() {
+		MenuItemIngredient mii = new MenuItemIngredient();
+		assertNotNull(mii.isIsAddedByDefault());
+		assertTrue("Default isAddedByDefault must be true", mii.isIsAddedByDefault());
+		assertTrue("Default isAddedByDefault must be true via alias", mii.isAddedByDefault());
+		assertTrue("Default getIsAddedByDefault must be true", mii.getIsAddedByDefault());
+		assertTrue("Default getAddedByDefault must be true", mii.getAddedByDefault());
+	}
+
+	@Test
+	public void testIsAddedByDefaultToggle() {
+		MenuItemIngredient mii = new MenuItemIngredient();
+		mii.setIngredient(ingGarlic);
+		mii.setIsAddedByDefault(Boolean.FALSE);
+		assertFalse("isAddedByDefault should be false after set", mii.isIsAddedByDefault());
+		assertFalse("getIsAddedByDefault should be false after set", mii.getIsAddedByDefault());
+
+		mii.setAddedByDefault(Boolean.TRUE);
+		assertTrue("isAddedByDefault should be true after reset", mii.isAddedByDefault());
+	}
+
+	@Test
+	public void testIsAddedByDefaultNullSafety() {
+		MenuItemIngredient mii = new MenuItemIngredient();
+		mii.setIsAddedByDefault(null);
+		assertNotNull(mii.isIsAddedByDefault());
+		assertTrue("isIsAddedByDefault must guard against null and return true", mii.isIsAddedByDefault());
+		assertTrue("getIsAddedByDefault must guard against null and return true", mii.getIsAddedByDefault());
+	}
 }

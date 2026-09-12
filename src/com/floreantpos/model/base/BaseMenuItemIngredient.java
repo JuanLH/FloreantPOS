@@ -10,6 +10,8 @@ public abstract class BaseMenuItemIngredient implements Comparable, Serializable
 	public static String REF = "MenuItemIngredient"; //$NON-NLS-1$
 	public static String PROP_ID = "id"; //$NON-NLS-1$
 	public static String PROP_CAN_BE_REMOVED = "canBeRemoved"; //$NON-NLS-1$
+	public static String PROP_IS_ADDED_BY_DEFAULT = "isAddedByDefault"; //$NON-NLS-1$
+	public static String PROP_ADDED_BY_DEFAULT = "addedByDefault"; //$NON-NLS-1$
 	public static String PROP_INGREDIENT = "ingredient"; //$NON-NLS-1$
 	public static String PROP_MENU_ITEM = "menuItem"; //$NON-NLS-1$
 
@@ -35,6 +37,7 @@ public abstract class BaseMenuItemIngredient implements Comparable, Serializable
 
 	// fields
 	private java.lang.Boolean canBeRemoved = Boolean.FALSE;
+	private java.lang.Boolean isAddedByDefault = Boolean.TRUE;
 
 	// many to one
 	private com.floreantpos.model.Ingredient ingredient;
@@ -59,6 +62,30 @@ public abstract class BaseMenuItemIngredient implements Comparable, Serializable
 
 	public void setCanBeRemoved (java.lang.Boolean canBeRemoved) {
 		this.canBeRemoved = canBeRemoved;
+	}
+
+	public java.lang.Boolean isIsAddedByDefault () {
+		return isAddedByDefault == null ? Boolean.TRUE : isAddedByDefault;
+	}
+
+	public java.lang.Boolean getIsAddedByDefault () {
+		return isAddedByDefault == null ? Boolean.TRUE : isAddedByDefault;
+	}
+
+	public void setIsAddedByDefault (java.lang.Boolean isAddedByDefault) {
+		this.isAddedByDefault = isAddedByDefault;
+	}
+
+	public java.lang.Boolean isAddedByDefault () {
+		return isIsAddedByDefault();
+	}
+
+	public java.lang.Boolean getAddedByDefault () {
+		return isIsAddedByDefault();
+	}
+
+	public void setAddedByDefault (java.lang.Boolean addedByDefault) {
+		setIsAddedByDefault(addedByDefault);
 	}
 
 	public com.floreantpos.model.Ingredient getIngredient () {

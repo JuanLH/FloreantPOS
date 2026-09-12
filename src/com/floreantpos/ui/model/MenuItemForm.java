@@ -1115,7 +1115,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 	}
 
 	class MenuItemIngredientTableModel extends AbstractTableModel {
-		String[] cn = { com.floreantpos.POSConstants.NAME, com.floreantpos.POSConstants.DESCRIPTION, com.floreantpos.POSConstants.CAN_BE_REMOVED };
+		String[] cn = { com.floreantpos.POSConstants.NAME, com.floreantpos.POSConstants.DESCRIPTION, com.floreantpos.POSConstants.CAN_BE_REMOVED, com.floreantpos.POSConstants.ADDED_BY_DEFAULT };
 
 		MenuItemIngredientTableModel() {
 		}
@@ -1161,7 +1161,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 
 		@Override
 		public Class<?> getColumnClass(int columnIndex) {
-			if (columnIndex == 2) {
+			if (columnIndex == 2 || columnIndex == 3) {
 				return Boolean.class;
 			}
 			return String.class;
@@ -1185,6 +1185,9 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 
 				case 2:
 					return itemIngredient.isCanBeRemoved();
+
+				case 3:
+					return itemIngredient.isIsAddedByDefault();
 			}
 			return ""; //$NON-NLS-1$
 		}

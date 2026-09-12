@@ -1,6 +1,8 @@
 package com.floreantpos.ui.model;
 
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 import javax.swing.JCheckBox;
@@ -22,6 +24,7 @@ public class MenuItemIngredientForm extends BeanEditor {
 
 	private JComboBox cbIngredients;
 	private JCheckBox chkCanBeRemoved;
+	private JCheckBox chkIsAddedByDefault;
 
 	public MenuItemIngredientForm() {
 		this(new MenuItemIngredient());
@@ -44,17 +47,41 @@ public class MenuItemIngredientForm extends BeanEditor {
 	}
 
 	private void initComponents() {
-		setLayout(new MigLayout("fillx, insets 15 20 15 20, wrap 2", "[right,100::]15[grow,fill,240::]")); //$NON-NLS-1$ //$NON-NLS-2$
-		setPreferredSize(new Dimension(440, 140));
+		setLayout(new MigLayout("fillx, insets 15 20 15 20, wrap 2", "[right,100::]15[grow,fill,240::]"));  //$NON-NLS-1$ //$NON-NLS-2$
+		setPreferredSize(new Dimension(440, 190));
 
 		JLabel lblIngredient = new JLabel(POSConstants.INGREDIENT + ":"); //$NON-NLS-1$
 		cbIngredients = new JComboBox();
 		chkCanBeRemoved = new JCheckBox(POSConstants.USER_CAN_REMOVE_INGREDIENT);
+		chkIsAddedByDefault = new JCheckBox(POSConstants.IS_ADDED_BY_DEFAULT);
+
+		// When ingredient cannot be removed it is always present by default.
+		chkCanBeRemoved.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				updateIsAddedByDefaultState();
+			}
+		});
+
+		// Apply initial state (canBeRemoved starts unchecked by default).
+		updateIsAddedByDefaultState();
 
 		add(lblIngredient);
 		add(cbIngredients);
 		add(new JLabel());
 		add(chkCanBeRemoved);
+		add(new JLabel());
+		add(chkIsAddedByDefault);
+	}
+
+	/** Keeps chkIsAddedByDefault in sync with chkCanBeRemoved. */
+	private void updateIsAddedByDefaultState() {
+		if (!chkCanBeRemoved.isSelected()) {
+			chkIsAddedByDefault.setSelected(true);
+			chkIsAddedByDefault.setEnabled(false);
+		} else {
+			chkIsAddedByDefault.setEnabled(true);
+		}
 	}
 
 	@Override
@@ -72,6 +99,8 @@ public class MenuItemIngredientForm extends BeanEditor {
 			cbIngredients.setSelectedItem(itemIngredient.getIngredient());
 		}
 		chkCanBeRemoved.setSelected(itemIngredient.isCanBeRemoved() != null ? itemIngredient.isCanBeRemoved() : false);
+		chkIsAddedByDefault.setSelected(itemIngredient.isIsAddedByDefault() != null ? itemIngredient.isIsAddedByDefault() : true);
+		updateIsAddedByDefaultState();
 	}
 
 	@Override
@@ -85,6 +114,7 @@ public class MenuItemIngredientForm extends BeanEditor {
 		MenuItemIngredient itemIngredient = (MenuItemIngredient) getBean();
 		itemIngredient.setIngredient(selected);
 		itemIngredient.setCanBeRemoved(chkCanBeRemoved.isSelected());
+		itemIngredient.setIsAddedByDefault(chkIsAddedByDefault.isSelected());
 		return true;
 	}
 

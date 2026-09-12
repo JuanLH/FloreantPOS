@@ -110,5 +110,7 @@ public class IngredientValidationTest {
 		assertFalse("NO_INGREDIENTS_AVAILABLE should be resolved", com.floreantpos.POSConstants.NO_INGREDIENTS_AVAILABLE.startsWith("!"));
 		assertEquals("user can remove the ingredient", com.floreantpos.POSConstants.USER_CAN_REMOVE_INGREDIENT);
 		assertEquals("Can be removed", com.floreantpos.POSConstants.CAN_BE_REMOVED);
+		assertEquals("added by default", com.floreantpos.POSConstants.IS_ADDED_BY_DEFAULT);
+		assertEquals("Added by default", com.floreantpos.POSConstants.ADDED_BY_DEFAULT);
 	}
 }
