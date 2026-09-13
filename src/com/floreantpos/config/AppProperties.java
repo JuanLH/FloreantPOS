@@ -22,9 +22,9 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import com.floreantpos.PosLog;
 
 public class AppProperties {
-	
+
 	private static PropertiesConfiguration properties;
-	
+
 	static {
 		try {
 			properties = new PropertiesConfiguration(AppProperties.class.getResource("/app.properties")); //$NON-NLS-1$
@@ -32,16 +32,16 @@ public class AppProperties {
 			PosLog.error(AppProperties.class, e.getMessage());
 		}
 	}
-	
+
 	public static String getVersion() {
 		return properties.getString("floreantpos.version"); //$NON-NLS-1$
-		
+
 	}
-	
+
 	public static String getAppName() {
 		return properties.getString("app.name"); //$NON-NLS-1$
 	}
-	
+
 	public static String getAppVersion() {
 		return properties.getString("app.version"); //$NON-NLS-1$
 	}

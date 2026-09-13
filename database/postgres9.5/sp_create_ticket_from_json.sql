@@ -196,76 +196,20 @@ BEGIN
     v_delivery_charge := COALESCE((p_order_json->>'delivery_charge')::DOUBLE PRECISION, 0.0);
 
     -- =========================================================================
-    -- STEP 2 — Customer upsert
-    --   Primary lookup  : MOBILE_NO
-    --   Fallback lookup : EMAIL  (used when mobile_no is absent/empty)
-    --   If neither matches an existing record -> INSERT new customer
+    -- STEP 2 — Customer information extraction (for TICKET_PROPERTIES)
+    --   Customer entity creation is bypassed; customer data is saved as ticket
+    --   properties (CUSTOMER_NAME, CUSTOMER_MOBILE) in STEP 5.
     -- =========================================================================
     v_customer_obj := p_order_json->'customer';
 
     IF v_customer_obj IS NOT NULL THEN
-
-        v_cust_first_name := v_customer_obj->>'first_name';
-        v_cust_last_name  := v_customer_obj->>'last_name';
+        v_cust_first_name := TRIM(v_customer_obj->>'first_name');
+        v_cust_last_name  := TRIM(v_customer_obj->>'last_name');
         v_cust_name       := COALESCE(
                                  v_customer_obj->>'name',
                                  TRIM(COALESCE(v_cust_first_name, '') || ' ' || COALESCE(v_cust_last_name, ''))
                              );
-        v_cust_email      := v_customer_obj->>'email';
-        v_cust_mobile     := v_customer_obj->>'mobile_no';
-        v_cust_home_phone := v_customer_obj->>'home_phone_no';
-        v_cust_address    := v_customer_obj->>'address';
-        v_cust_city       := v_customer_obj->>'city';
-        v_cust_state      := v_customer_obj->>'state';
-        v_cust_zip        := v_customer_obj->>'zip_code';
-        v_cust_note       := v_customer_obj->>'note';
-
-        -- Try lookup by MOBILE_NO (primary key for customer identity)
-        IF v_cust_mobile IS NOT NULL AND v_cust_mobile <> '' THEN
-            SELECT AUTO_ID INTO v_customer_id
-            FROM   CUSTOMER
-            WHERE  MOBILE_NO = v_cust_mobile
-            LIMIT  1;
-        END IF;
-
-        -- Fallback: lookup by EMAIL when no mobile match was found
-        IF v_customer_id IS NULL AND v_cust_email IS NOT NULL AND v_cust_email <> '' THEN
-            SELECT AUTO_ID INTO v_customer_id
-            FROM   CUSTOMER
-            WHERE  EMAIL = v_cust_email
-            LIMIT  1;
-        END IF;
-
-        -- No existing customer found — create a new record
-        IF v_customer_id IS NULL THEN
-            INSERT INTO CUSTOMER (
-                FIRST_NAME,
-                LAST_NAME,
-                name,
-                EMAIL,
-                MOBILE_NO,
-                HOMEPHONE_NO,
-                ADDRESS,
-                CITY,
-                STATE,
-                ZIP_CODE,
-                NOTE
-            ) VALUES (
-                v_cust_first_name,
-                v_cust_last_name,
-                v_cust_name,
-                v_cust_email,
-                v_cust_mobile,
-                v_cust_home_phone,
-                v_cust_address,
-                v_cust_city,
-                v_cust_state,
-                v_cust_zip,
-                v_cust_note
-            )
-            RETURNING AUTO_ID INTO v_customer_id;
-        END IF;
-
+        v_cust_mobile     := COALESCE(v_customer_obj->>'mobile_no', v_customer_obj->>'mobilePhone', v_customer_obj->>'phone');
     END IF; -- END customer block
 
     -- =========================================================================
@@ -440,10 +384,21 @@ BEGIN
     )
     RETURNING ID INTO v_ticket_id;
 
-    -- Persist optional order notes as a ticket property
-    IF v_notes IS NOT NULL AND v_notes <> '' THEN
+    -- Persist customer details as ticket properties
+    IF v_cust_name IS NOT NULL AND TRIM(v_cust_name) <> '' THEN
         INSERT INTO TICKET_PROPERTIES (id, property_name, property_value)
-        VALUES (v_ticket_id, 'notes', v_notes);
+        VALUES (v_ticket_id, 'CUSTOMER_NAME', TRIM(v_cust_name));
+    END IF;
+
+    IF v_cust_mobile IS NOT NULL AND TRIM(v_cust_mobile) <> '' THEN
+        INSERT INTO TICKET_PROPERTIES (id, property_name, property_value)
+        VALUES (v_ticket_id, 'CUSTOMER_MOBILE', TRIM(v_cust_mobile));
+    END IF;
+
+    -- Persist optional order notes as a ticket property
+    IF v_notes IS NOT NULL AND TRIM(v_notes) <> '' THEN
+        INSERT INTO TICKET_PROPERTIES (id, property_name, property_value)
+        VALUES (v_ticket_id, 'notes', TRIM(v_notes));
     END IF;
 
     -- =========================================================================
@@ -720,12 +675,17 @@ BEGIN
     -- =========================================================================
     -- STEP 9 — Insert table numbers into TICKET_TABLE_NUM
     -- =========================================================================
-    FOR v_table_num IN
-        SELECT jsonb_array_elements_text(p_order_json->'table_numbers')::INTEGER
-    LOOP
+    IF p_order_json ? 'table_id' AND (p_order_json->>'table_id') IS NOT NULL AND (p_order_json->>'table_id') <> '' THEN
         INSERT INTO TICKET_TABLE_NUM (ticket_id, TABLE_ID)
-        VALUES (v_ticket_id, v_table_num);
-    END LOOP;
+        VALUES (v_ticket_id, (p_order_json->>'table_id')::INTEGER);
+    ELSIF p_order_json ? 'table_numbers' AND jsonb_typeof(p_order_json->'table_numbers') = 'array' THEN
+        FOR v_table_num IN
+            SELECT DISTINCT jsonb_array_elements_text(p_order_json->'table_numbers')::INTEGER
+        LOOP
+            INSERT INTO TICKET_TABLE_NUM (ticket_id, TABLE_ID)
+            VALUES (v_ticket_id, v_table_num);
+        END LOOP;
+    END IF;
 
     -- =========================================================================
     -- STEP 10 — Update TICKET row with the fully computed totals

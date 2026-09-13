@@ -711,7 +711,7 @@ public class ReceiptPrintService {
 						endRow(ticketHeaderBuilder);
 					}
 				}
-				else if (orderType != null && !orderType.isDelivery()) {
+				else if (orderType != null && !orderType.isDelivery() && ticket.getTableNumbers().isEmpty()) {
 					beginRow(ticketHeaderBuilder);
 					addColumn(ticketHeaderBuilder, Messages.getString("ReceiptPrintService.111")); //$NON-NLS-1$
 					endRow(ticketHeaderBuilder);
