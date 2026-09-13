@@ -665,28 +665,55 @@ BEGIN
         -- =====================================================================
         -- STEP 8 — Inner loop: cooking instructions for this item
         -- =====================================================================
-        FOR v_ci_rec IN
-            SELECT jsonb_array_elements(v_item_rec->'cooking_instructions')
-        LOOP
+        v_ci_order := 0;
 
-            v_ci_description := v_ci_rec->>'description';
-            v_ci_printed     := COALESCE((v_ci_rec->>'printed_to_kitchen')::BOOLEAN, FALSE);
+        IF v_item_rec ? 'cooking_instructions' 
+           AND jsonb_typeof(v_item_rec->'cooking_instructions') = 'array' THEN
 
-            INSERT INTO TICKET_ITEM_COOKING_INSTRUCTION (
-                TICKET_ITEM_ID,
-                ITEM_ORDER,
-                description,
-                printedToKitchen
-            ) VALUES (
-                v_ticket_item_id,
-                v_ci_order,
-                v_ci_description,
-                v_ci_printed
-            );
+            FOR v_ci_rec IN
+                SELECT jsonb_array_elements(v_item_rec->'cooking_instructions')
+            LOOP
 
-            v_ci_order := v_ci_order + 1;
+                -- Support both simple string element ("No Onion") and object element ({"description": ...})
+                IF jsonb_typeof(v_ci_rec) = 'string' THEN
+                    v_ci_description := TRIM(v_ci_rec#>>'{}');
+                    v_ci_printed     := FALSE;
+                ELSE
+                    v_ci_description := TRIM(v_ci_rec->>'description');
+                    v_ci_printed     := COALESCE((v_ci_rec->>'printed_to_kitchen')::BOOLEAN, FALSE);
+                END IF;
 
-        END LOOP; -- END cooking instructions inner loop
+                -- Validation: discard null or empty whitespace strings
+                IF v_ci_description IS NOT NULL AND LENGTH(v_ci_description) > 0 THEN
+                    -- Truncate to 60 characters to satisfy VARCHAR(60) constraint
+                    v_ci_description := SUBSTRING(v_ci_description FROM 1 FOR 60);
+
+                    -- Deduplication check per ticket item
+                    IF NOT EXISTS (
+                        SELECT 1 
+                        FROM TICKET_ITEM_COOKING_INSTRUCTION
+                        WHERE TICKET_ITEM_ID = v_ticket_item_id 
+                          AND description = v_ci_description
+                    ) THEN
+                        INSERT INTO TICKET_ITEM_COOKING_INSTRUCTION (
+                            TICKET_ITEM_ID,
+                            ITEM_ORDER,
+                            description,
+                            printedToKitchen
+                        ) VALUES (
+                            v_ticket_item_id,
+                            v_ci_order,
+                            v_ci_description,
+                            v_ci_printed
+                        );
+
+                        v_ci_order := v_ci_order + 1;
+                    END IF;
+                END IF;
+
+            END LOOP; -- END cooking instructions inner loop
+
+        END IF;
 
     END LOOP; -- END items outer loop
 
