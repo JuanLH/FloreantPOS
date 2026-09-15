@@ -73,7 +73,6 @@ public class DefaultCustomerListView extends CustomerSelector {
 	protected Customer selectedCustomer;
 	private PosButton btnRemoveCustomer;
 
-	private Ticket ticket;
 	private PosButton btnCancel;
 	private QwertyKeyPad qwertyKeyPad;
 	private PosButton btnNext;
@@ -86,8 +85,14 @@ public class DefaultCustomerListView extends CustomerSelector {
 	}
 
 	public DefaultCustomerListView(Ticket ticket) {
-		this.ticket = ticket;
+		super.setTicket(ticket);
 		initUI();
+		loadCustomerFromTicket();
+	}
+
+	@Override
+	public void setTicket(Ticket ticket) {
+		super.setTicket(ticket);
 		loadCustomerFromTicket();
 	}
 
@@ -295,16 +300,19 @@ public class DefaultCustomerListView extends CustomerSelector {
 	}
 
 	private void loadCustomerFromTicket() {
-		String customerIdString = ticket.getProperty(Ticket.CUSTOMER_ID);
+		Ticket activeTicket = getTicket();
+		if (activeTicket == null) {
+			return;
+		}
+		String customerIdString = activeTicket.getProperty(Ticket.CUSTOMER_ID);
 		if (StringUtils.isNotEmpty(customerIdString)) {
 			int customerId = Integer.parseInt(customerIdString);
 			Customer customer = CustomerDAO.getInstance().get(customerId);
 
 			List<Customer> list = new ArrayList<Customer>();
 			list.add(customer);
-			customerTable.setModel(new CustomerListTableModel(list));
+			customerListTableModel.setRows(list);
 		}
-
 	}
 
 	private void closeDialog(boolean canceled) {
@@ -424,6 +432,11 @@ public class DefaultCustomerListView extends CustomerSelector {
 
 			CustomerListTableModel model = (CustomerListTableModel) customerTable.getModel();
 			model.addItem(selectedCustomer);
+			int newModelRow = model.getRowCount() - 1;
+			int newViewRow = customerTable.convertRowIndexToView(newModelRow);
+			if (newViewRow >= 0 && newViewRow < customerTable.getRowCount()) {
+				customerTable.setRowSelectionInterval(newViewRow, newViewRow);
+			}
 		}
 	}
 	
@@ -436,12 +449,9 @@ public class DefaultCustomerListView extends CustomerSelector {
 			form.updateCustomer(customer);
 			BeanEditorDialog dialog = new BeanEditorDialog(POSUtil.getBackOfficeWindow(), form);
 			dialog.open();
-			/*if (!dialog.isCanceled()) {
-				selectedCustomer = (Customer) form.getBean();
-	
-				CustomerListTableModel model = (CustomerListTableModel) customerTable.getModel();
-				model.addItem(selectedCustomer);
-			}*/
+			if (!dialog.isCanceled()) {
+				customerTable.repaint();
+			}
 		}
 	}
 
@@ -458,7 +468,12 @@ public class DefaultCustomerListView extends CustomerSelector {
 		return "C"; //$NON-NLS-1$
 	}
 
+	@Override
 	public Customer getSelectedCustomer() {
+		Customer customer = customerTable.getSelectedCustomer();
+		if (customer != null) {
+			return customer;
+		}
 		return selectedCustomer;
 	}
 

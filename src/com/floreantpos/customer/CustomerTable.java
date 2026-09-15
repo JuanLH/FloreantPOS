@@ -59,10 +59,15 @@ public class CustomerTable extends JXTable {
 	public Customer getSelectedCustomer() {
 		TableModel model = getModel();
 		if(model instanceof CustomerListTableModel) {
-			if(getSelectedRow()== -1) {
+			int selectedRow = getSelectedRow();
+			if(selectedRow == -1) {
 				return null;
 			}
-			return (Customer) ((CustomerListTableModel) model).getRowData(getSelectedRow());
+			int modelRow = convertRowIndexToModel(selectedRow);
+			if (modelRow < 0 || modelRow >= model.getRowCount()) {
+				return null;
+			}
+			return (Customer) ((CustomerListTableModel) model).getRowData(modelRow);
 		}
 		
 		return null;
