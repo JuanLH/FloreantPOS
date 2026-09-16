@@ -437,7 +437,7 @@ BEGIN
         LOOP
             v_modifier_subtotal := v_modifier_subtotal +
                 COALESCE((v_mod_rec->>'unit_price')::DOUBLE PRECISION, 0.0) *
-                COALESCE((v_mod_rec->>'item_count')::INTEGER, 1);
+                COALESCE((v_mod_rec->>'item_count')::INTEGER, (v_mod_rec->>'quantity')::INTEGER, (v_mod_rec->>'count')::INTEGER, 1);
         END LOOP;
 
         -- ---------------------------------------------------------------------
@@ -539,7 +539,7 @@ BEGIN
             v_mod_unit_price  := COALESCE((v_mod_rec->>'unit_price')::DOUBLE PRECISION, 0.0);
             v_mod_tax_rate    := COALESCE((v_mod_rec->>'tax_rate')::DOUBLE PRECISION, 0.0);
             v_mod_type        := COALESCE((v_mod_rec->>'modifier_type')::INTEGER, 1);
-            v_mod_item_count  := COALESCE((v_mod_rec->>'item_count')::INTEGER, 1);
+            v_mod_item_count  := COALESCE((v_mod_rec->>'item_count')::INTEGER, (v_mod_rec->>'quantity')::INTEGER, (v_mod_rec->>'count')::INTEGER, 1) * GREATEST(v_item_count, 1);
             v_mod_is_addon    := COALESCE((v_mod_rec->>'is_addon')::BOOLEAN, FALSE);
 
             -- -----------------------------------------------------------------
