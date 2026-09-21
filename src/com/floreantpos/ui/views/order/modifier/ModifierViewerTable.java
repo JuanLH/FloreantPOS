@@ -135,8 +135,10 @@ public class ModifierViewerTable extends JTable {
 	}
 
 	public void increaseItemAmount(TicketItem ticketItem) {
-		int itemCount = ticketItem.getItemCount();
-		ticketItem.setItemCount(++itemCount);
+		int oldCount = ticketItem.getItemCount();
+		int newCount = oldCount + 1;
+		ticketItem.setItemCount(newCount);
+		ticketItem.scaleModifiers(oldCount, newCount);
 		repaint();
 	}
 
@@ -152,8 +154,10 @@ public class ModifierViewerTable extends JTable {
 		Object object = model.get(selectedRow);
 		if (object instanceof TicketItem) {
 			TicketItem ticketItem = (TicketItem) object;
-			int itemCount = ticketItem.getItemCount();
-			ticketItem.setItemCount(++itemCount);
+			int oldCount = ticketItem.getItemCount();
+			int newCount = oldCount + 1;
+			ticketItem.setItemCount(newCount);
+			ticketItem.scaleModifiers(oldCount, newCount);
 			repaint();
 
 			return true;
@@ -186,11 +190,13 @@ public class ModifierViewerTable extends JTable {
 		Object object = model.get(selectedRow);
 		if (object instanceof TicketItem) {
 			TicketItem ticketItem = (TicketItem) object;
-			int itemCount = ticketItem.getItemCount();
-			if (itemCount == 1)
+			int oldCount = ticketItem.getItemCount();
+			if (oldCount == 1)
 				return false;
 
-			ticketItem.setItemCount(--itemCount);
+			int newCount = oldCount - 1;
+			ticketItem.setItemCount(newCount);
+			ticketItem.scaleModifiers(oldCount, newCount);
 			repaint();
 
 			return true;

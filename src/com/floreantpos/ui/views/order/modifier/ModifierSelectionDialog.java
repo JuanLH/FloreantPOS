@@ -62,6 +62,8 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 
 	private com.floreantpos.swing.PosButton btnSave;
 	private com.floreantpos.swing.PosButton btnCancel;
+	private int itemQuantity = 1;
+	private boolean quantityRestored = false;
 
 	public ModifierSelectionDialog(ModifierSelectionModel modifierSelectionModel) {
 		this.modifierSelectionModel = modifierSelectionModel;
@@ -75,6 +77,12 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 		setLayout(new java.awt.BorderLayout(10, 10));
 
 		Dimension screenSize = Application.getPosWindow().getSize();
+
+		TicketItem ticketItem = modifierSelectionModel.getTicketItem();
+		if (ticketItem != null && ticketItem.getItemCount() != null && ticketItem.getItemCount() > 1) {
+			itemQuantity = ticketItem.getItemCount();
+			resetItemQuantityAndPrice();
+		}
 
 		modifierGroupView = new com.floreantpos.ui.views.order.modifier.ModifierGroupView(modifierSelectionModel);
 		modifierView = new ModifierView(modifierSelectionModel);
@@ -95,7 +103,79 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 		modifierGroupView.addModifierGroupSelectionListener(this);
 		modifierView.addModifierSelectionListener(this);
 
+		addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosing(java.awt.event.WindowEvent e) {
+				if (isCanceled()) {
+					updateItemQuantitAyndPrice();
+				}
+			}
+		});
+
 		modifierGroupView.selectFirst();
+	}
+
+	private synchronized void resetItemQuantityAndPrice() {
+		quantityRestored = false;
+		TicketItem ticketItem = modifierSelectionModel.getTicketItem();
+		ticketItem.setItemCount(1);
+		List<TicketItemModifier> ticketItemModifiers = ticketItem.getTicketItemModifiers();
+		if (ticketItemModifiers != null) {
+			for (TicketItemModifier ticketItemModifier : ticketItemModifiers) {
+				if (ticketItemModifier.isInfoOnly()) {
+					continue;
+				}
+				int perItemCount = ticketItemModifier.getItemCount() / itemQuantity;
+				if (perItemCount < 1) {
+					perItemCount = 1;
+				}
+				ticketItemModifier.setItemCount(perItemCount);
+			}
+		}
+		List<TicketItemModifier> addOns = ticketItem.getAddOns();
+		if (addOns != null) {
+			for (TicketItemModifier addOn : addOns) {
+				if (addOn.isInfoOnly()) {
+					continue;
+				}
+				int perItemCount = addOn.getItemCount() / itemQuantity;
+				if (perItemCount < 1) {
+					perItemCount = 1;
+				}
+				addOn.setItemCount(perItemCount);
+			}
+		}
+		ticketItem.calculatePrice();
+	}
+
+	private synchronized void updateItemQuantityAndPrice() {
+		if (quantityRestored) {
+			return;
+		}
+		quantityRestored = true;
+		TicketItem ticketItem = modifierSelectionModel.getTicketItem();
+		if (itemQuantity > 1) {
+			ticketItem.setItemCount(itemQuantity);
+			List<TicketItemModifier> ticketItemModifiers = ticketItem.getTicketItemModifiers();
+			if (ticketItemModifiers != null) {
+				for (TicketItemModifier ticketItemModifier : ticketItemModifiers) {
+					if (ticketItemModifier.isInfoOnly()) {
+						continue;
+					}
+					ticketItemModifier.setItemCount(ticketItemModifier.getItemCount() * itemQuantity);
+				}
+			}
+			List<TicketItemModifier> addOns = ticketItem.getAddOns();
+			if (addOns != null) {
+				for (TicketItemModifier addOn : addOns) {
+					if (addOn.isInfoOnly()) {
+						continue;
+					}
+					addOn.setItemCount(addOn.getItemCount() * itemQuantity);
+				}
+			}
+			ticketItem.calculatePrice();
+		}
 	}
 
 	public void createButtonPanel() {
@@ -112,6 +192,7 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 		btnCancel = new PosButton(POSConstants.CANCEL.toUpperCase());
 		btnCancel.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				updateItemQuantityAndPrice();
 				setCanceled(true);
 				dispose();
 			}
@@ -143,6 +224,7 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 	private void doFinishModifierSelection() {
 		List<MenuItemModifierGroup> menuItemModiferGroups = modifierSelectionModel.getMenuItem().getMenuItemModiferGroups();
 		if (menuItemModiferGroups == null) {
+			updateItemQuantityAndPrice();
 			dispose();
 			return;
 		}
@@ -155,6 +237,7 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 			}
 		}
 
+		updateItemQuantityAndPrice();
 		setCanceled(false);
 		dispose();
 	}

@@ -471,6 +471,9 @@ public class PizzaModifierSelectionDialog extends POSDialog implements ModifierS
 					continue;
 				ticketItemModifier.setItemCount(ticketItemModifier.getItemCount() * pizzaQuantity);
 			}
+		if (ticketItem.getSizeModifier() != null && !ticketItem.getSizeModifier().isInfoOnly()) {
+			ticketItem.getSizeModifier().setItemCount(ticketItem.getSizeModifier().getItemCount() * pizzaQuantity);
+		}
 		ticketItem.calculatePrice();
 	}
 
@@ -482,8 +485,19 @@ public class PizzaModifierSelectionDialog extends POSDialog implements ModifierS
 			for (TicketItemModifier ticketItemModifier : ticketItemModifiers) {
 				if (ticketItemModifier.isInfoOnly())
 					continue;
-				ticketItemModifier.setItemCount(ticketItemModifier.getItemCount() / pizzaQuantity);
+				int perItemCount = ticketItemModifier.getItemCount() / pizzaQuantity;
+				if (perItemCount < 1) {
+					perItemCount = 1;
+				}
+				ticketItemModifier.setItemCount(perItemCount);
 			}
+		if (ticketItem.getSizeModifier() != null && !ticketItem.getSizeModifier().isInfoOnly()) {
+			int perItemCount = ticketItem.getSizeModifier().getItemCount() / pizzaQuantity;
+			if (perItemCount < 1) {
+				perItemCount = 1;
+			}
+			ticketItem.getSizeModifier().setItemCount(perItemCount);
+		}
 		ticketItem.calculatePrice();
 	}
 

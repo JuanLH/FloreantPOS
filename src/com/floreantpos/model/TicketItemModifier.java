@@ -17,6 +17,7 @@
  */
 package com.floreantpos.model;
 
+import com.floreantpos.Messages;
 import com.floreantpos.main.Application;
 import com.floreantpos.model.base.BaseTicketItemModifier;
 import com.floreantpos.util.NumberUtil;
@@ -149,21 +150,28 @@ public class TicketItemModifier extends BaseTicketItemModifier implements ITicke
 			return getName().trim();
 		}
 		int itemCount = getItemCount();
-		if (getTicketItem().isPizzaType()) {
-			itemCount = itemCount / getTicketItem().getItemCount();
+		TicketItem ticketItem = getTicketItem();
+		if (ticketItem != null && ticketItem.getItemCount() != null && ticketItem.getItemCount() > 0) {
+			if (ticketItem.isPizzaType() || (itemCount % ticketItem.getItemCount() == 0)) {
+				itemCount = itemCount / ticketItem.getItemCount();
+			}
 		}
-		String display;
-		if (itemCount > 1) {
-			display = itemCount + "x " + getName(); //$NON-NLS-1$
-		}
-		else {
-			display = getName().trim(); //$NON-NLS-1$
-		}
+		String name = getName().trim();
 		if (getModifierType() == NORMAL_MODIFIER) {
-			display += "*"; //$NON-NLS-1$
+			name += "*"; //$NON-NLS-1$
+		}
+		String unit = Messages.getString("MODIFIER_EACH"); //$NON-NLS-1$
+		if (unit == null || unit.startsWith("!") || unit.trim().isEmpty()) {
+			unit = "ea"; //$NON-NLS-1$
+		}
+		int count = (itemCount > 0) ? itemCount : 1;
+		String display = count + " " + name; //$NON-NLS-1$
+
+		if (!display.toLowerCase().endsWith(" " + unit.toLowerCase())) { //$NON-NLS-1$
+			display += " " + unit; //$NON-NLS-1$
 		}
 
-		return display; //$NON-NLS-1$
+		return display;
 	}
 
 	@Override

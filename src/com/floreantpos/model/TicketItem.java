@@ -143,7 +143,7 @@ public class TicketItem extends BaseTicketItem implements ITicketItem {
 	}
 
 	public java.lang.Double getTaxAmount() {
-		if (getTicket().isTaxExempt()) {
+		if (getTicket() != null && getTicket().isTaxExempt()) {
 			return 0.0;
 		}
 
@@ -533,6 +533,49 @@ public class TicketItem extends BaseTicketItem implements ITicketItem {
 		if (isMergable(otherItem, true)) {
 			this.setItemCount(this.getItemCount() + otherItem.getItemCount());
 		}
+	}
+
+	public void scaleModifiers(int oldCount, int newCount) {
+		if (oldCount <= 0 || newCount <= 0 || oldCount == newCount) {
+			return;
+		}
+		List<TicketItemModifier> modifiers = getTicketItemModifiers();
+		if (modifiers != null) {
+			for (TicketItemModifier modifier : modifiers) {
+				if (modifier.isInfoOnly()) {
+					continue;
+				}
+				int currentCount = modifier.getItemCount();
+				int newModifierCount = (int) Math.round(((double) currentCount * newCount) / oldCount);
+				if (newModifierCount < 1) {
+					newModifierCount = 1;
+				}
+				modifier.setItemCount(newModifierCount);
+			}
+		}
+		List<TicketItemModifier> addOns = getAddOns();
+		if (addOns != null) {
+			for (TicketItemModifier addOn : addOns) {
+				if (addOn.isInfoOnly()) {
+					continue;
+				}
+				int currentCount = addOn.getItemCount();
+				int newAddOnCount = (int) Math.round(((double) currentCount * newCount) / oldCount);
+				if (newAddOnCount < 1) {
+					newAddOnCount = 1;
+				}
+				addOn.setItemCount(newAddOnCount);
+			}
+		}
+		if (getSizeModifier() != null && !getSizeModifier().isInfoOnly()) {
+			int currentCount = getSizeModifier().getItemCount();
+			int newSizeCount = (int) Math.round(((double) currentCount * newCount) / oldCount);
+			if (newSizeCount < 1) {
+				newSizeCount = 1;
+			}
+			getSizeModifier().setItemCount(newSizeCount);
+		}
+		calculatePrice();
 	}
 
 	//	public double calculateSubtotal() {

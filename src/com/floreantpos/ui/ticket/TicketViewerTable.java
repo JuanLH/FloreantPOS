@@ -166,8 +166,10 @@ public class TicketViewerTable extends JTable {
 	}
 
 	public void increaseItemAmount(TicketItem ticketItem) {
-		int itemCount = ticketItem.getItemCount();
-		ticketItem.setItemCount(++itemCount);
+		int oldCount = ticketItem.getItemCount();
+		int newCount = oldCount + 1;
+		ticketItem.setItemCount(newCount);
+		ticketItem.scaleModifiers(oldCount, newCount);
 		repaint();
 	}
 
@@ -205,8 +207,10 @@ public class TicketViewerTable extends JTable {
 
 		if (iTicketItem instanceof TicketItem) {
 			TicketItem ticketItem = (TicketItem) iTicketItem;
-			int itemCount = ticketItem.getItemCount();
-			ticketItem.setItemCount(++itemCount);
+			int oldCount = ticketItem.getItemCount();
+			int newCount = oldCount + 1;
+			ticketItem.setItemCount(newCount);
+			ticketItem.scaleModifiers(oldCount, newCount);
 			fireTicketItemUpdated(getTicket(), ticketItem);
 			return true;
 		}
@@ -228,14 +232,16 @@ public class TicketViewerTable extends JTable {
 		}
 		if (iTicketItem instanceof TicketItem) {
 			TicketItem ticketItem = (TicketItem) iTicketItem;
-			int itemCount = ticketItem.getItemCount();
-			if (itemCount == 1) {
+			int oldCount = ticketItem.getItemCount();
+			if (oldCount == 1) {
 				model.delete(selectedRow);
 				fireTicketItemUpdated(getTicket(), ticketItem);
 				return true;
 			}
 
-			ticketItem.setItemCount(--itemCount);
+			int newCount = oldCount - 1;
+			ticketItem.setItemCount(newCount);
+			ticketItem.scaleModifiers(oldCount, newCount);
 			fireTicketItemUpdated(getTicket(), ticketItem);
 			return true;
 		}

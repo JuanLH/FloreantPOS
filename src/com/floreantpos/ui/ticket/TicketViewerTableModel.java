@@ -131,7 +131,10 @@ public class TicketViewerTableModel extends AbstractTableModel {
 					previousFractionalItemQuantity = item.getItemQuantity();
 				}
 				else {
-					item.setItemCount(item.getItemCount() + 1);
+					int oldCount = item.getItemCount();
+					int newCount = oldCount + 1;
+					item.setItemCount(newCount);
+					item.scaleModifiers(oldCount, newCount);
 				}
 				return values.length - 1;
 			}
@@ -161,9 +164,10 @@ public class TicketViewerTableModel extends AbstractTableModel {
 			boolean exists = false;
 			for (TicketItem item : ticketItems) {
 				if (item.getName().equals(ticketItem.getName())) {
-					int itemCount = item.getItemCount();
-					itemCount += ticketItem.getItemCount();
-					item.setItemCount(itemCount);
+					int oldCount = item.getItemCount();
+					int newCount = oldCount + ticketItem.getItemCount();
+					item.setItemCount(newCount);
+					item.scaleModifiers(oldCount, newCount);
 					exists = true;
 					table.repaint();
 					return;

@@ -144,7 +144,10 @@ public class TodoTicketViewerTableModel extends AbstractTableModel {
 			TicketItem t = (TicketItem) iTicketItem;
 
 			if (ticketItem.getName().equals(t.getName()) && !t.isPrintedToKitchen()) {
-				t.setItemCount(t.getItemCount() + 1);
+				int oldCount = t.getItemCount();
+				int newCount = oldCount + 1;
+				t.setItemCount(newCount);
+				t.scaleModifiers(oldCount, newCount);
 
 				table.repaint();
 
@@ -176,9 +179,10 @@ public class TodoTicketViewerTableModel extends AbstractTableModel {
 			boolean exists = false;
 			for (TicketItem item : ticketItems) {
 				if (item.getName().equals(ticketItem.getName())) {
-					int itemCount = item.getItemCount();
-					itemCount += ticketItem.getItemCount();
-					item.setItemCount(itemCount);
+					int oldCount = item.getItemCount();
+					int newCount = oldCount + ticketItem.getItemCount();
+					item.setItemCount(newCount);
+					item.scaleModifiers(oldCount, newCount);
 					exists = true;
 					table.repaint();
 					return;
