@@ -107,7 +107,7 @@ public class ModifierSelectionDialog extends POSDialog implements ModifierGroupS
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent e) {
 				if (isCanceled()) {
-					updateItemQuantitAyndPrice();
+					updateItemQuantityAndPrice();
 				}
 			}
 		});
