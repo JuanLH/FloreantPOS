@@ -51,6 +51,7 @@ public class RecepieExplorer extends TransparentPanel {
 		mainTab.addTab(Messages.getString("RecepieExplorer.tab.inventoryLocation"), new InventoryLocationExplorer()); //$NON-NLS-1$
 		mainTab.addTab(Messages.getString("RecepieExplorer.tab.inventoryVendor"),  new InventoryVendorExplorer()); //$NON-NLS-1$
 		mainTab.addTab(Messages.getString("RecepieExplorer.tab.packagingUnit"),    new PackagingUnitExplorer()); //$NON-NLS-1$
+		mainTab.addTab(Messages.getString("RecepieExplorer.tab.unitConversion"),   new PackagingUnitConversionExplorer()); //$NON-NLS-1$
 		mainTab.addTab(Messages.getString("RecepieExplorer.tab.inventoryItem"),    new InventoryItemExplorer()); //$NON-NLS-1$
 
 		add(mainTab);

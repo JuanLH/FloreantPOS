@@ -25,6 +25,7 @@
         <property column="TOTAL_UNIT_PACKAGES" name="totalPackages" type="java.lang.Double"/>
         <property column="TOTAL_RECEPIE_UNITS" name="totalRecepieUnits" type="java.lang.Double"/>
        
+        <property column="PACKAGE_PURCHASE_PRICE" name="packagePurchasePrice" type="java.lang.Double"/>
         <property column="UNIT_PURCHASE_PRICE" name="unitPurchasePrice" type="java.lang.Double"/>
         <property column="UNIT_SELLING_PRICE" name="unitSellingPrice" type="java.lang.Double"/>
         <property column="VISIBLE" name="visible" type="java.lang.Boolean"/>

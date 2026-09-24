@@ -5,3 +5,4 @@ encoding/config=UTF-8
 encoding/i18n=UTF-8
 encoding/resources=UTF-8
 encoding/src=UTF-8
+encoding/test=UTF-8

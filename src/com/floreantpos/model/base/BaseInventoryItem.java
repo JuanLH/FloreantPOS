@@ -38,6 +38,7 @@ public abstract class BaseInventoryItem  implements Comparable, Serializable {
 	public static String PROP_PACKAGE_REORDER_LEVEL = "packageReorderLevel"; //$NON-NLS-1$
 	public static String PROP_UNIT_SELLING_PRICE = "unitSellingPrice"; //$NON-NLS-1$
 	public static String PROP_UNIT_PURCHASE_PRICE = "unitPurchasePrice"; //$NON-NLS-1$
+	public static String PROP_PACKAGE_PURCHASE_PRICE = "packagePurchasePrice"; //$NON-NLS-1$
 
 
 	// constructors
@@ -77,6 +78,7 @@ public abstract class BaseInventoryItem  implements Comparable, Serializable {
 		protected java.lang.Double totalPackages;
 		protected java.lang.Double totalRecepieUnits;
 		protected java.lang.Double unitPurchasePrice;
+		protected java.lang.Double packagePurchasePrice;
 		protected java.lang.Double unitSellingPrice;
 		protected java.lang.Boolean visible;
 
@@ -345,6 +347,21 @@ public abstract class BaseInventoryItem  implements Comparable, Serializable {
 	 */
 	public void setUnitPurchasePrice (java.lang.Double unitPurchasePrice) {
 		this.unitPurchasePrice = unitPurchasePrice;
+	}
+
+	/**
+	 * Return the value associated with the column: PACKAGE_PURCHASE_PRICE
+	 */
+	public java.lang.Double getPackagePurchasePrice () {
+		return packagePurchasePrice == null ? Double.valueOf(0) : packagePurchasePrice;
+	}
+
+	/**
+	 * Set the value related to the column: PACKAGE_PURCHASE_PRICE
+	 * @param packagePurchasePrice the PACKAGE_PURCHASE_PRICE value
+	 */
+	public void setPackagePurchasePrice (java.lang.Double packagePurchasePrice) {
+		this.packagePurchasePrice = packagePurchasePrice;
 	}
 
 

@@ -19,6 +19,7 @@ import net.miginfocom.swing.MigLayout;
 
 import com.floreantpos.Messages;
 import com.floreantpos.model.InventoryItem;
+import com.floreantpos.model.PackagingUnit;
 import com.floreantpos.model.Recepie;
 import com.floreantpos.model.RecepieItem;
 import com.floreantpos.model.dao.InventoryItemDAO;
@@ -32,6 +33,7 @@ import com.floreantpos.util.POSUtil;
 public class RecepieItemEntryDialog extends JDialog {
 
 	private JComboBox<InventoryItem> cbInventoryItem;
+	private JTextField tfRecipeUnit;
 	private JTextField tfQuantity;
 	private JTextField tfPurchasePrice;
 	private JTextField tfSellingPrice;
@@ -72,6 +74,11 @@ public class RecepieItemEntryDialog extends JDialog {
 		cbInventoryItem.addItem(null);
 		for (InventoryItem it : items) cbInventoryItem.addItem(it);
 
+		// Recipe Unit field (read-only)
+		tfRecipeUnit = new JTextField(12);
+		tfRecipeUnit.setEditable(false);
+		tfRecipeUnit.setFocusable(false);
+
 		// Quantity field
 		tfQuantity = new JTextField(12);
 		tfQuantity.addKeyListener(new KeyAdapter() {
@@ -95,6 +102,8 @@ public class RecepieItemEntryDialog extends JDialog {
 
 		formPanel.add(new JLabel(Messages.getString("RecepieItemEntryDialog.inventoryItem"))); //$NON-NLS-1$
 		formPanel.add(cbInventoryItem);
+		formPanel.add(new JLabel(Messages.getString("RecepieItemEntryDialog.recipeUnit"))); //$NON-NLS-1$
+		formPanel.add(tfRecipeUnit);
 		formPanel.add(new JLabel(Messages.getString("RecepieItemEntryDialog.quantity"))); //$NON-NLS-1$
 		formPanel.add(tfQuantity);
 		formPanel.add(new JLabel(Messages.getString("RecepieItemEntryDialog.purchasePrice"))); //$NON-NLS-1$
@@ -139,10 +148,13 @@ public class RecepieItemEntryDialog extends JDialog {
 	private void updateCalculatedFields() {
 		InventoryItem item = (InventoryItem) cbInventoryItem.getSelectedItem();
 		if (item == null) {
+			tfRecipeUnit.setText(""); //$NON-NLS-1$
 			tfPurchasePrice.setText(""); //$NON-NLS-1$
 			tfSellingPrice.setText(""); //$NON-NLS-1$
 			return;
 		}
+		PackagingUnit recipeUnit = item.getRecipeUnit();
+		tfRecipeUnit.setText(recipeUnit != null ? recipeUnit.getName() : ""); //$NON-NLS-1$
 		try {
 			double qty = Double.parseDouble(tfQuantity.getText());
 			tfPurchasePrice.setText(String.format("%.4f", qty * item.getUnitPurchasePrice())); //$NON-NLS-1$

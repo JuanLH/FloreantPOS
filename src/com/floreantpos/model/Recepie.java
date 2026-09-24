@@ -82,4 +82,18 @@ public class Recepie extends BaseRecepie {
 		return total;
 	}
 
+	/**
+	 * Returns the profit percentage based on total selling cost and total purchase cost:
+	 * ((selling - cost) / cost) * 100.
+	 * Returns 0.0 if cost is zero and selling is zero, or 100.0 if cost is zero and selling > 0.
+	 */
+	public double getProfitPercentage() {
+		double cost = getTotalPurchaseCost();
+		double selling = getTotalSellingCost();
+		if (cost == 0.0) {
+			return selling > 0.0 ? 100.0 : 0.0;
+		}
+		return ((selling - cost) / cost) * 100.0;
+	}
+
 }

@@ -505,4 +505,18 @@ public class POSConstants {
 	public static final String CAN_BE_REMOVED = Messages.getString("POSConstants.CAN_BE_REMOVED"); //$NON-NLS-1$
 	public static final String IS_ADDED_BY_DEFAULT = Messages.getString("POSConstants.IS_ADDED_BY_DEFAULT"); //$NON-NLS-1$
 	public static final String ADDED_BY_DEFAULT = Messages.getString("POSConstants.ADDED_BY_DEFAULT"); //$NON-NLS-1$
+
+	public static final String UNIT_CONVERSIONS = Messages.getString("POSConstants.UNIT_CONVERSIONS"); //$NON-NLS-1$
+	public static final String UNIT_CONVERSION = Messages.getString("POSConstants.UNIT_CONVERSION"); //$NON-NLS-1$
+	public static final String NEW_UNIT_CONVERSION = Messages.getString("POSConstants.NEW_UNIT_CONVERSION"); //$NON-NLS-1$
+	public static final String EDIT_UNIT_CONVERSION = Messages.getString("POSConstants.EDIT_UNIT_CONVERSION"); //$NON-NLS-1$
+	public static final String SOURCE_UNIT = Messages.getString("POSConstants.SOURCE_UNIT"); //$NON-NLS-1$
+	public static final String TARGET_UNIT = Messages.getString("POSConstants.TARGET_UNIT"); //$NON-NLS-1$
+	public static final String CONVERSION_FACTOR = Messages.getString("POSConstants.CONVERSION_FACTOR"); //$NON-NLS-1$
+	public static final String RECIPE_UNIT_COST = Messages.getString("POSConstants.RECIPE_UNIT_COST"); //$NON-NLS-1$
+	public static final String PACKAGING_PURCHASE_PRICE = Messages.getString("POSConstants.PACKAGING_PURCHASE_PRICE"); //$NON-NLS-1$
+	public static final String CONVERSION_FACTOR_REQUIRED = Messages.getString("POSConstants.CONVERSION_FACTOR_REQUIRED"); //$NON-NLS-1$
+	public static final String IDENTICAL_CONVERSION_UNITS_ERROR = Messages.getString("POSConstants.IDENTICAL_CONVERSION_UNITS_ERROR"); //$NON-NLS-1$
+	public static final String DUPLICATE_CONVERSION_ERROR = Messages.getString("POSConstants.DUPLICATE_CONVERSION_ERROR"); //$NON-NLS-1$
+	public static final String UNITS_REQUIRED_ERROR = Messages.getString("POSConstants.UNITS_REQUIRED_ERROR"); //$NON-NLS-1$
 }

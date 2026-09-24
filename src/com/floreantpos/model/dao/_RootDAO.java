@@ -60,6 +60,7 @@ import com.floreantpos.model.KitchenTicketItem;
 import com.floreantpos.model.MenuCategory;
 import com.floreantpos.model.MenuGroup;
 import com.floreantpos.model.MenuItem;
+import com.floreantpos.model.PackagingUnitConversion;
 import com.floreantpos.model.MenuItemModifierGroup;
 import com.floreantpos.model.MenuItemShift;
 import com.floreantpos.model.MenuItemSize;
@@ -253,6 +254,7 @@ public abstract class _RootDAO extends com.floreantpos.model.dao._BaseRootDAO {
 		configuration.addClass(Recepie.class);
 		configuration.addClass(RecepieItem.class);
 		configuration.addClass(PackagingUnit.class);
+		configuration.addClass(PackagingUnitConversion.class);
 
 		return configuration;
 	}

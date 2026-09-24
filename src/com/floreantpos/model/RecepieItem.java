@@ -50,5 +50,27 @@ public class RecepieItem extends BaseRecepieItem {
 
 /*[CONSTRUCTOR MARKER END]*/
 
+	public double getPurchasePrice() {
+		if (getInventoryItem() != null && getQuantity() != null) {
+			return getQuantity() * getInventoryItem().getUnitPurchasePrice();
+		}
+		return 0.0;
+	}
+
+	public double getSellingPrice() {
+		if (getInventoryItem() != null && getQuantity() != null) {
+			return getQuantity() * getInventoryItem().getUnitSellingPrice();
+		}
+		return 0.0;
+	}
+
+	public double getProfitPercentage() {
+		double cost = getPurchasePrice();
+		double selling = getSellingPrice();
+		if (cost == 0.0) {
+			return selling > 0.0 ? 100.0 : 0.0;
+		}
+		return ((selling - cost) / cost) * 100.0;
+	}
 
 }

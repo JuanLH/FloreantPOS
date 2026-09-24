@@ -3,6 +3,7 @@ package com.floreantpos.bo.ui.explorer;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,7 @@ import com.floreantpos.POSConstants;
 import com.floreantpos.bo.ui.BOMessageDialog;
 import com.floreantpos.model.MenuGroup;
 import com.floreantpos.model.MenuItem;
+import com.floreantpos.model.PackagingUnit;
 import com.floreantpos.model.Recepie;
 import com.floreantpos.model.RecepieItem;
 import com.floreantpos.model.dao.MenuGroupDAO;
@@ -435,7 +437,8 @@ public class RecepieExplorerPanel extends TransparentPanel {
 			Messages.getString("RecepieExplorerPanel.col.id"), //$NON-NLS-1$
 			Messages.getString("RecepieExplorerPanel.col.menuItem"), //$NON-NLS-1$
 			Messages.getString("RecepieExplorerPanel.col.totalPurchaseCost"), //$NON-NLS-1$
-			Messages.getString("RecepieExplorerPanel.col.totalSellingCost") //$NON-NLS-1$
+			Messages.getString("RecepieExplorerPanel.col.totalSellingCost"), //$NON-NLS-1$
+			Messages.getString("RecepieExplorerPanel.col.profitPercentage") //$NON-NLS-1$
 		};
 		private List<Recepie> rows;
 
@@ -458,6 +461,7 @@ public class RecepieExplorerPanel extends TransparentPanel {
 				case 1: return r.getMenuItem() != null ? r.getMenuItem().getName() : ""; //$NON-NLS-1$
 				case 2: return String.format("%.4f", r.getTotalPurchaseCost()); //$NON-NLS-1$
 				case 3: return String.format("%.4f", r.getTotalSellingCost()); //$NON-NLS-1$
+				case 4: return String.format("%.2f%%", r.getProfitPercentage()); //$NON-NLS-1$
 			}
 			return null;
 		}
@@ -475,11 +479,18 @@ public class RecepieExplorerPanel extends TransparentPanel {
 			Messages.getString("RecepieExplorerPanel.col.packagingUnit"), //$NON-NLS-1$
 			Messages.getString("RecepieExplorerPanel.col.quantity"), //$NON-NLS-1$
 			Messages.getString("RecepieExplorerPanel.col.purchasePrice"), //$NON-NLS-1$
-			Messages.getString("RecepieExplorerPanel.col.sellingPrice") //$NON-NLS-1$
+			Messages.getString("RecepieExplorerPanel.col.sellingPrice"), //$NON-NLS-1$
+			Messages.getString("RecepieExplorerPanel.col.profitPercentage") //$NON-NLS-1$
 		};
 		private List<RecepieItem> rows;
+		private final NumberFormat quantityFormat;
 
-		RecepieItemTableModel(List<RecepieItem> rows) { this.rows = rows; }
+		RecepieItemTableModel(List<RecepieItem> rows) {
+			this.rows = rows;
+			this.quantityFormat = NumberFormat.getNumberInstance();
+			this.quantityFormat.setMinimumFractionDigits(2);
+			this.quantityFormat.setMaximumFractionDigits(4);
+		}
 
 		void setRows(List<RecepieItem> rows) {
 			this.rows = rows;
@@ -498,11 +509,31 @@ public class RecepieExplorerPanel extends TransparentPanel {
 				case 1: return item.getInventoryItem() != null ? item.getInventoryItem().getName() : ""; //$NON-NLS-1$
 				case 2: return (item.getInventoryItem() != null && item.getInventoryItem().getPackagingUnit() != null)
 					? item.getInventoryItem().getPackagingUnit().getName() : ""; //$NON-NLS-1$
-				case 3: return item.getQuantity();
+				case 3: {
+					double qty = item.getQuantity() != null ? item.getQuantity() : 0.0;
+					String formattedQty = quantityFormat.format(qty);
+					String unitStr = "";
+					if (item.getInventoryItem() != null) {
+						PackagingUnit unit = item.getInventoryItem().getRecipeUnit();
+						if (unit == null) {
+							unit = item.getInventoryItem().getPackagingUnit();
+						}
+						if (unit != null) {
+							if (unit.getShortName() != null && !unit.getShortName().trim().isEmpty()) {
+								unitStr = unit.getShortName().trim();
+							} else if (unit.getName() != null && !unit.getName().trim().isEmpty()) {
+								unitStr = unit.getName().trim();
+							}
+						}
+					}
+					return !unitStr.isEmpty() ? formattedQty + " " + unitStr : formattedQty; //$NON-NLS-1$
+				}
 				case 4: return item.getInventoryItem() != null
-					? String.format("%.4f", item.getQuantity() * item.getInventoryItem().getUnitPurchasePrice()) : ""; //$NON-NLS-1$
+					? String.format("%.4f", item.getPurchasePrice()) : ""; //$NON-NLS-1$
 				case 5: return item.getInventoryItem() != null
-					? String.format("%.4f", item.getQuantity() * item.getInventoryItem().getUnitSellingPrice()) : ""; //$NON-NLS-1$
+					? String.format("%.4f", item.getSellingPrice()) : ""; //$NON-NLS-1$
+				case 6: return item.getInventoryItem() != null
+					? String.format("%.2f%%", item.getProfitPercentage()) : ""; //$NON-NLS-1$
 			}
 			return null;
 		}
