@@ -425,13 +425,14 @@ public class Ticket extends BaseTicket {
 		
 		// Comes null from Drawer report. When close Drawer
 		if (this.orderType != null) {
-			if (!this.orderType.isDelivery()) 
-				deliveryCharge =  0.0;
-			
-			if (this.orderType.isDelivery() && this.orderType.isRequiredCustomerData()) 
-			{
-				if (this.getCustomer().getDeliveryCharge() > 0)
+			deliveryCharge =  0.0;
+			if (this.orderType.isDelivery()) {
+				if(this.deliveryCharge > 0) { 
+					deliveryCharge = this.deliveryCharge;
+				}
+				else if(this.getCustomer().getDeliveryCharge() > 0) {
 					deliveryCharge = this.getCustomer().getDeliveryCharge();
+				}
 			}
 		}
 		

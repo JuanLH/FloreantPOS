@@ -14,7 +14,7 @@
 		<property name="homePhoneNo" column="HOMEPHONE_NO" length="30" type="string" />
 		<property name="mobileNo" column="MOBILE_NO" length="30" type="string" />
 		<property name="workPhoneNo" column="WORKPHONE_NO" length="30" type="string" />
-		<property name="email" column="EMAIL" length="40" type="string" />
+		<property name="email" column="EMAIL" length="60" unique="true" type="string" />
 		<property name="salutation" column="SALUTATION" length="60" type="string" />
 		<property name="firstName" column="FIRST_NAME" length="60" type="string" />
 		<property name="lastName" column="LAST_NAME" length="60" type="string" />

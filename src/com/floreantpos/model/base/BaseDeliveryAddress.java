@@ -15,8 +15,11 @@ import java.io.Serializable;
 public abstract class BaseDeliveryAddress  implements Comparable, Serializable {
 
 	public static String REF = "DeliveryAddress";
+	public static String PROP_LABEL = "label";
 	public static String PROP_CUSTOMER = "customer";
 	public static String PROP_DISTANCE = "distance";
+	public static String PROP_LATITUDE = "latitude";
+	public static String PROP_LONGITUDE = "longitude";
 	public static String PROP_ROOM_NO = "roomNo";
 	public static String PROP_PHONE_EXTENSION = "phoneExtension";
 	public static String PROP_ADDRESS = "address";
@@ -46,10 +49,13 @@ public abstract class BaseDeliveryAddress  implements Comparable, Serializable {
 	private java.lang.Integer id;
 
 	// fields
+		protected java.lang.String label;
 		protected java.lang.String address;
 		protected java.lang.String phoneExtension;
 		protected java.lang.String roomNo;
 		protected java.lang.Double distance;
+		protected java.lang.Double latitude;
+		protected java.lang.Double longitude;
 
 	// many to one
 	private com.floreantpos.model.Customer customer;
@@ -75,6 +81,23 @@ public abstract class BaseDeliveryAddress  implements Comparable, Serializable {
 		this.hashCode = Integer.MIN_VALUE;
 	}
 
+
+
+
+	/**
+	 * Return the value associated with the column: LABEL
+	 */
+	public java.lang.String getLabel () {
+					return label;
+			}
+
+	/**
+	 * Set the value related to the column: LABEL
+	 * @param label the LABEL value
+	 */
+	public void setLabel (java.lang.String label) {
+		this.label = label;
+	}
 
 
 
@@ -142,6 +165,40 @@ public abstract class BaseDeliveryAddress  implements Comparable, Serializable {
 	 */
 	public void setDistance (java.lang.Double distance) {
 		this.distance = distance;
+	}
+
+
+
+	/**
+	 * Return the value associated with the column: LATITUDE
+	 */
+	public java.lang.Double getLatitude () {
+					return latitude;
+			}
+
+	/**
+	 * Set the value related to the column: LATITUDE
+	 * @param latitude the LATITUDE value
+	 */
+	public void setLatitude (java.lang.Double latitude) {
+		this.latitude = latitude;
+	}
+
+
+
+	/**
+	 * Return the value associated with the column: LONGITUDE
+	 */
+	public java.lang.Double getLongitude () {
+					return longitude;
+			}
+
+	/**
+	 * Set the value related to the column: LONGITUDE
+	 * @param longitude the LONGITUDE value
+	 */
+	public void setLongitude (java.lang.Double longitude) {
+		this.longitude = longitude;
 	}
 
 

@@ -8,9 +8,10 @@
 --                    address, table numbers) returning the new TICKET.ID.
 --
 -- Defaults applied for open design questions:
---   Q1  Customer lookup   : by MOBILE_NO first; falls back to EMAIL if no
---                           mobile is provided. MOBILE_NO match wins if both
---                           fields map to different records.
+--   Q1  Customer resolution: Resolves customer by EMAIL in CUSTOMER table.
+--                            If exists: gets AUTO_ID and assigns to TICKET.CUSTOMER_ID.
+--                            If not exists: creates a CUSTOMER record and gets AUTO_ID.
+--                            Ticket CANNOT have CUSTOMER_ID = NULL.
 --   Q2  Delivery charge   : API passes delivery_charge in the JSON root.
 --   Q3  System params     : p_owner_id / p_terminal_id / p_shift_id are
 --                           optional (DEFAULT NULL) for headless/online orders.
@@ -95,10 +96,13 @@ DECLARE
     -- Delivery address variables  (extracted from p_order_json -> 'delivery_address')
     -- -------------------------------------------------------------------------
     v_delivery_obj       JSONB;                     -- the delivery_address sub-object
+    v_del_label          TEXT;                      -- -> DELIVERY_ADDRESS.LABEL
     v_del_address        TEXT;                      -- -> DELIVERY_ADDRESS.ADDRESS
     v_del_phone_ext      TEXT;                      -- -> DELIVERY_ADDRESS.PHONE_EXTENSION
     v_del_room_no        TEXT;                      -- -> DELIVERY_ADDRESS.ROOM_NO
     v_del_distance       DOUBLE PRECISION;          -- -> DELIVERY_ADDRESS.DISTANCE
+    v_del_latitude       DOUBLE PRECISION;          -- -> DELIVERY_ADDRESS.LATITUDE
+    v_del_longitude      DOUBLE PRECISION;          -- -> DELIVERY_ADDRESS.LONGITUDE
     v_del_addr_full_str  TEXT;                      -- combined string -> TICKET.DELIVERY_ADDRESS
 
     -- -------------------------------------------------------------------------
@@ -196,21 +200,114 @@ BEGIN
     v_delivery_charge := COALESCE((p_order_json->>'delivery_charge')::DOUBLE PRECISION, 0.0);
 
     -- =========================================================================
-    -- STEP 2 — Customer information extraction (for TICKET_PROPERTIES)
-    --   Customer entity creation is bypassed; customer data is saved as ticket
-    --   properties (CUSTOMER_NAME, CUSTOMER_MOBILE) in STEP 5.
+    -- STEP 2 — Customer resolution and creation
+    --   The ticket cannot have customer_id = NULL.
+    --   1. Extract customer details from JSON payload.
+    --   2. Check if customer email exists in the CUSTOMER table:
+    --      - If exists: get AUTO_ID and use it in ticket customer_id.
+    --      - If not exists: create a CUSTOMER record and get AUTO_ID.
     -- =========================================================================
     v_customer_obj := p_order_json->'customer';
 
     IF v_customer_obj IS NOT NULL THEN
-        v_cust_first_name := TRIM(v_customer_obj->>'first_name');
-        v_cust_last_name  := TRIM(v_customer_obj->>'last_name');
+        v_cust_first_name := TRIM(COALESCE(v_customer_obj->>'first_name', v_customer_obj->>'firstName'));
+        v_cust_last_name  := TRIM(COALESCE(v_customer_obj->>'last_name', v_customer_obj->>'lastName'));
         v_cust_name       := COALESCE(
-                                 v_customer_obj->>'name',
-                                 TRIM(COALESCE(v_cust_first_name, '') || ' ' || COALESCE(v_cust_last_name, ''))
+                                 TRIM(v_customer_obj->>'name'),
+                                 NULLIF(TRIM(COALESCE(v_cust_first_name, '') || ' ' || COALESCE(v_cust_last_name, '')), '')
                              );
+        v_cust_email      := LOWER(TRIM(COALESCE(v_customer_obj->>'email', p_order_json->>'customer_email', p_order_json->>'email')));
         v_cust_mobile     := COALESCE(v_customer_obj->>'mobile_no', v_customer_obj->>'mobilePhone', v_customer_obj->>'phone');
-    END IF; -- END customer block
+        v_cust_home_phone := COALESCE(v_customer_obj->>'home_phone_no', v_customer_obj->>'homePhone', v_customer_obj->>'home_phone');
+        v_cust_address    := COALESCE(v_customer_obj->>'address', p_order_json->'delivery_address'->>'address');
+        v_cust_city       := v_customer_obj->>'city';
+        v_cust_state      := v_customer_obj->>'state';
+        v_cust_zip        := COALESCE(v_customer_obj->>'zip_code', v_customer_obj->>'zip', v_customer_obj->>'zipCode');
+        v_cust_note       := COALESCE(v_customer_obj->>'note', v_customer_obj->>'notes', v_customer_obj->>'delivery_notes');
+    ELSE
+        -- Support root-level customer fields if customer object is omitted
+        v_cust_first_name := TRIM(COALESCE(p_order_json->>'first_name', p_order_json->>'firstName'));
+        v_cust_last_name  := TRIM(COALESCE(p_order_json->>'last_name', p_order_json->>'lastName'));
+        v_cust_name       := COALESCE(
+                                 TRIM(p_order_json->>'customer_name'),
+                                 NULLIF(TRIM(COALESCE(v_cust_first_name, '') || ' ' || COALESCE(v_cust_last_name, '')), '')
+                             );
+        v_cust_email      := LOWER(TRIM(COALESCE(p_order_json->>'customer_email', p_order_json->>'email')));
+        v_cust_mobile     := COALESCE(p_order_json->>'customer_mobile', p_order_json->>'mobile_no', p_order_json->>'mobilePhone', p_order_json->>'phone');
+    END IF;
+
+    -- Normalize email and truncate to 60 characters
+    IF v_cust_email IS NOT NULL THEN
+        v_cust_email := NULLIF(SUBSTRING(v_cust_email FROM 1 FOR 60), '');
+    END IF;
+
+    -- 1. Check if caller supplied an explicit valid customer ID (auto_id or id)
+    IF v_customer_obj IS NOT NULL AND (v_customer_obj->>'auto_id' IS NOT NULL OR v_customer_obj->>'id' IS NOT NULL) THEN
+        SELECT AUTO_ID INTO v_customer_id
+        FROM CUSTOMER
+        WHERE AUTO_ID = COALESCE((v_customer_obj->>'auto_id')::INTEGER, (v_customer_obj->>'id')::INTEGER)
+        LIMIT 1;
+    END IF;
+
+    -- 2. Check if the email exists in the CUSTOMER table
+    IF v_customer_id IS NULL AND v_cust_email IS NOT NULL THEN
+        SELECT AUTO_ID INTO v_customer_id
+        FROM CUSTOMER
+        WHERE LOWER(TRIM(EMAIL)) = v_cust_email
+        LIMIT 1;
+    END IF;
+
+    -- 3. If customer not found, create new record in CUSTOMER table and get AUTO_ID
+    IF v_customer_id IS NULL THEN
+        IF v_cust_email IS NULL THEN
+            RAISE EXCEPTION 'Customer email is required to resolve or create customer record';
+        END IF;
+
+        IF v_cust_name IS NULL OR v_cust_name = '' THEN
+            v_cust_name := v_cust_email;
+        END IF;
+
+        BEGIN
+            INSERT INTO CUSTOMER (
+                FIRST_NAME,
+                LAST_NAME,
+                name,
+                EMAIL,
+                MOBILE_NO,
+                HOMEPHONE_NO,
+                ADDRESS,
+                CITY,
+                STATE,
+                ZIP_CODE,
+                NOTE
+            ) VALUES (
+                SUBSTRING(v_cust_first_name FROM 1 FOR 60),
+                SUBSTRING(v_cust_last_name FROM 1 FOR 60),
+                SUBSTRING(v_cust_name FROM 1 FOR 120),
+                v_cust_email,
+                SUBSTRING(v_cust_mobile FROM 1 FOR 30),
+                SUBSTRING(v_cust_home_phone FROM 1 FOR 30),
+                SUBSTRING(v_cust_address FROM 1 FOR 620),
+                SUBSTRING(v_cust_city FROM 1 FOR 30),
+                SUBSTRING(v_cust_state FROM 1 FOR 30),
+                SUBSTRING(v_cust_zip FROM 1 FOR 10),
+                SUBSTRING(v_cust_note FROM 1 FOR 255)
+            )
+            RETURNING AUTO_ID INTO v_customer_id;
+        EXCEPTION
+            WHEN unique_violation THEN
+                -- In case of concurrent insert with the same email
+                SELECT AUTO_ID INTO v_customer_id
+                FROM CUSTOMER
+                WHERE LOWER(TRIM(EMAIL)) = v_cust_email
+                LIMIT 1;
+        END;
+    END IF;
+
+    -- Final validation: Ticket can't have customer_id = NULL
+    IF v_customer_id IS NULL THEN
+        RAISE EXCEPTION 'Ticket cannot be created without a valid customer ID';
+    END IF;
 
     -- =========================================================================
     -- STEP 3 — Delivery address insert
@@ -220,24 +317,62 @@ BEGIN
 
     IF v_delivery_obj IS NOT NULL THEN
 
+        v_del_label     := SUBSTRING(COALESCE(v_delivery_obj->>'label', v_delivery_obj->>'address_label', p_order_json->>'address_label', p_order_json->>'label') FROM 1 FOR 30);
         v_del_address   := v_delivery_obj->>'address';
         v_del_phone_ext := v_delivery_obj->>'phone_extension';
         v_del_room_no   := v_delivery_obj->>'room_no';
         v_del_distance  := (v_delivery_obj->>'distance')::DOUBLE PRECISION;
+        v_del_latitude  := (v_delivery_obj->>'latitude')::DOUBLE PRECISION;
+        v_del_longitude := (v_delivery_obj->>'longitude')::DOUBLE PRECISION;
 
-        INSERT INTO DELIVERY_ADDRESS (
-            ADDRESS,
-            PHONE_EXTENSION,
-            ROOM_NO,
-            DISTANCE,
-            CUSTOMER_ID
-        ) VALUES (
-            v_del_address,
-            v_del_phone_ext,
-            v_del_room_no,
-            v_del_distance,
-            v_customer_id
-        );
+        IF v_del_label IS NOT NULL AND TRIM(v_del_label) <> '' THEN
+            INSERT INTO DELIVERY_ADDRESS (
+                LABEL,
+                ADDRESS,
+                PHONE_EXTENSION,
+                ROOM_NO,
+                DISTANCE,
+                LATITUDE,
+                LONGITUDE,
+                CUSTOMER_ID
+            ) VALUES (
+                TRIM(v_del_label),
+                v_del_address,
+                v_del_phone_ext,
+                v_del_room_no,
+                v_del_distance,
+                v_del_latitude,
+                v_del_longitude,
+                v_customer_id
+            )
+            ON CONFLICT (LABEL, CUSTOMER_ID) DO UPDATE SET
+                ADDRESS = EXCLUDED.ADDRESS,
+                PHONE_EXTENSION = EXCLUDED.PHONE_EXTENSION,
+                ROOM_NO = EXCLUDED.ROOM_NO,
+                DISTANCE = EXCLUDED.DISTANCE,
+                LATITUDE = EXCLUDED.LATITUDE,
+                LONGITUDE = EXCLUDED.LONGITUDE;
+        ELSE
+            INSERT INTO DELIVERY_ADDRESS (
+                LABEL,
+                ADDRESS,
+                PHONE_EXTENSION,
+                ROOM_NO,
+                DISTANCE,
+                LATITUDE,
+                LONGITUDE,
+                CUSTOMER_ID
+            ) VALUES (
+                NULL,
+                v_del_address,
+                v_del_phone_ext,
+                v_del_room_no,
+                v_del_distance,
+                v_del_latitude,
+                v_del_longitude,
+                v_customer_id
+            );
+        END IF;
 
         -- Build a denormalised address string for TICKET.DELIVERY_ADDRESS column
         v_del_addr_full_str := TRIM(
@@ -393,6 +528,11 @@ BEGIN
     IF v_cust_mobile IS NOT NULL AND TRIM(v_cust_mobile) <> '' THEN
         INSERT INTO TICKET_PROPERTIES (id, property_name, property_value)
         VALUES (v_ticket_id, 'CUSTOMER_MOBILE', TRIM(v_cust_mobile));
+    END IF;
+
+    IF v_cust_email IS NOT NULL AND TRIM(v_cust_email) <> '' THEN
+        INSERT INTO TICKET_PROPERTIES (id, property_name, property_value)
+        VALUES (v_ticket_id, 'CUSTOMER_EMAIL', TRIM(v_cust_email));
     END IF;
 
     -- Persist optional order notes as a ticket property
