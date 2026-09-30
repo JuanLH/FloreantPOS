@@ -87,6 +87,41 @@ public class Ticket extends BaseTicket {
 
 	/* [CONSTRUCTOR MARKER END] */
 
+	private Boolean isWeb = false;
+	private Boolean isDelivery = false;
+
+	public Boolean isIsWeb() {
+		return isWeb != null ? isWeb : false;
+	}
+
+	public Boolean getIsWeb() {
+		return isWeb != null ? isWeb : false;
+	}
+
+	public Boolean isWeb() {
+		return isIsWeb();
+	}
+
+	public void setIsWeb(Boolean isWeb) {
+		this.isWeb = isWeb;
+	}
+
+	public Boolean isIsDelivery() {
+		return isDelivery != null ? isDelivery : false;
+	}
+
+	public Boolean getIsDelivery() {
+		return isDelivery != null ? isDelivery : false;
+	}
+
+	public Boolean isDelivery() {
+		return isIsDelivery();
+	}
+
+	public void setIsDelivery(Boolean isDelivery) {
+		this.isDelivery = isDelivery;
+	}
+
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd yyyy, h:m a"); //$NON-NLS-1$
 
 	private List deletedItems;
@@ -424,13 +459,24 @@ public class Ticket extends BaseTicket {
 		
 		
 		// Comes null from Drawer report. When close Drawer
-		if (this.orderType != null) {
-			deliveryCharge =  0.0;
-			if (this.orderType.isDelivery()) {
-				if(this.deliveryCharge > 0) { 
+		if (this.isWeb != null && this.isWeb) {
+			deliveryCharge = 0.0;
+			if (this.isDelivery != null && this.isDelivery) {
+				if (this.deliveryCharge != null && this.deliveryCharge > 0) { 
 					deliveryCharge = this.deliveryCharge;
 				}
-				else if(this.getCustomer().getDeliveryCharge() > 0) {
+				else if (this.getCustomer() != null && this.getCustomer().getDeliveryCharge() != null && this.getCustomer().getDeliveryCharge() > 0) {
+					deliveryCharge = this.getCustomer().getDeliveryCharge();
+				}
+			}
+		}
+		else if (this.orderType != null) {
+			deliveryCharge = 0.0;
+			if (this.orderType.isDelivery()) {
+				if (this.deliveryCharge != null && this.deliveryCharge > 0) { 
+					deliveryCharge = this.deliveryCharge;
+				}
+				else if (this.getCustomer() != null && this.getCustomer().getDeliveryCharge() != null && this.getCustomer().getDeliveryCharge() > 0) {
 					deliveryCharge = this.getCustomer().getDeliveryCharge();
 				}
 			}

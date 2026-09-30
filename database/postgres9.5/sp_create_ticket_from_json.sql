@@ -65,6 +65,8 @@ DECLARE
     v_num_guests        INTEGER;                    -- -> TICKET.NUMBER_OF_GUESTS
     v_notes             TEXT;                       -- -> TICKET_PROPERTIES key='notes'
     v_delivery_charge   DOUBLE PRECISION;           -- -> TICKET.DELIVERY_CHARGE
+    v_is_web            BOOLEAN := TRUE;            -- -> TICKET.IS_WEB
+    v_is_delivery       BOOLEAN := FALSE;           -- -> TICKET.IS_DELIVERY
 
     v_ticket_id         INTEGER;                    -- generated PK returned to caller
     v_ticket_subtotal   DOUBLE PRECISION := 0.0;   -- accumulated -> TICKET.SUB_TOTAL
@@ -199,6 +201,17 @@ BEGIN
     v_notes           := p_order_json->>'notes';
     v_delivery_charge := COALESCE((p_order_json->>'delivery_charge')::DOUBLE PRECISION, 0.0);
 
+    -- Web & Delivery flags: By default IS_WEB = TRUE; IS_DELIVERY = TRUE when user chooses delivery
+    v_is_web          := COALESCE((p_order_json->>'is_web')::BOOLEAN, TRUE);
+    IF (p_order_json->>'is_delivery') IS NOT NULL THEN
+        v_is_delivery := (p_order_json->>'is_delivery')::BOOLEAN;
+    ELSIF LOWER(COALESCE(v_order_type, '')) = 'delivery' 
+       OR (p_order_json->'delivery_address' IS NOT NULL AND jsonb_typeof(p_order_json->'delivery_address') = 'object') THEN
+        v_is_delivery := TRUE;
+    ELSE
+        v_is_delivery := FALSE;
+    END IF;
+
     -- =========================================================================
     -- STEP 2 — Customer resolution and creation
     --   The ticket cannot have customer_id = NULL.
@@ -315,7 +328,7 @@ BEGIN
     -- =========================================================================
     v_delivery_obj := p_order_json->'delivery_address';
 
-    IF v_delivery_obj IS NOT NULL THEN
+    IF v_delivery_obj IS NOT NULL AND jsonb_typeof(v_delivery_obj) = 'object' THEN
 
         v_del_label     := SUBSTRING(COALESCE(v_delivery_obj->>'label', v_delivery_obj->>'address_label', p_order_json->>'address_label', p_order_json->>'label') FROM 1 FOR 30);
         v_del_address   := v_delivery_obj->>'address';
@@ -484,7 +497,9 @@ BEGIN
         TERMINAL_ID,
         SHIFT_ID,
         VERSION_NO,
-        STATUS
+        STATUS,
+        IS_WEB,
+        IS_DELIVERY
     ) VALUES (
         v_global_id,
         v_create_date,
@@ -515,7 +530,9 @@ BEGIN
         p_terminal_id,
         p_shift_id,
         0,                  -- version_no     : optimistic-locking seed
-        'OPEN'              -- status
+        'OPEN',             -- status
+        v_is_web,
+        v_is_delivery
     )
     RETURNING ID INTO v_ticket_id;
 
