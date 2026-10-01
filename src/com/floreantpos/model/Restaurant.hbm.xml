@@ -22,5 +22,6 @@
     <property column="TICKET_FOOTER" length="60" name="ticketFooterMessage" type="java.lang.String"/>
     <property column="PRICE_INCLUDES_TAX" name="itemPriceIncludesTax" type="java.lang.Boolean"/>
     <property column="ALLOW_MODIFIER_MAX_EXCEED" name="allowModifierMaxExceed" type="java.lang.Boolean"/>
+    <property column="Online_Ordering_turnedOn" name="onlineOrderingTurnedOn" type="java.lang.Boolean"/>
   </class>
 </hibernate-mapping>

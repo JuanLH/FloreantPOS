@@ -987,7 +987,15 @@ public class ReceiptPrintService {
 			session = KitchenTicketDAO.getInstance().createNewSession();
 			transaction = session.beginTransaction();
 
-			List<KitchenTicket> kitchenTickets = KitchenTicket.fromTicket(ticket);
+			Ticket targetTicket = null;
+			if (ticket != null && ticket.getId() != null) {
+				targetTicket = (Ticket) session.get(Ticket.class, ticket.getId());
+			}
+			if (targetTicket == null) {
+				targetTicket = ticket;
+			}
+
+			List<KitchenTicket> kitchenTickets = KitchenTicket.fromTicket(targetTicket);
 
 			for (KitchenTicket kitchenTicket : kitchenTickets) {
 				Printer printer = kitchenTicket.getPrinter();
@@ -997,22 +1005,35 @@ public class ReceiptPrintService {
 				String deviceName = printer.getDeviceName();
 				JasperPrint jasperPrint = createKitchenPrint(printer.getVirtualPrinter().getName(), kitchenTicket, deviceName);
 
-				jasperPrint.setName("FP_KitchenReceipt_" + ticket.getId() + "_" + kitchenTicket.getSequenceNumber()); //$NON-NLS-1$ //$NON-NLS-2$ 
+				jasperPrint.setName("FP_KitchenReceipt_" + targetTicket.getId() + "_" + kitchenTicket.getSequenceNumber()); //$NON-NLS-1$ //$NON-NLS-2$ 
 				jasperPrint.setProperty(PROP_PRINTER_NAME, deviceName);
 
 				printQuitely(jasperPrint);
 
 				session.saveOrUpdate(kitchenTicket);
 			}
+
+			targetTicket.markPrintedToKitchen();
+			session.saveOrUpdate(targetTicket);
 			transaction.commit();
 
-			TicketDAO.getInstance().saveOrUpdate(ticket);
+			if (targetTicket != ticket) {
+				ticket.markPrintedToKitchen();
+			}
 
 		} catch (Exception e) {
-			transaction.rollback();
+			if (transaction != null && transaction.isActive()) {
+				try {
+					transaction.rollback();
+				} catch (Exception ignored) {
+				}
+			}
 			logger.error(com.floreantpos.POSConstants.PRINT_ERROR, e);
+			throw new PosException("Failed to print kitchen ticket: " + e.getMessage(), e);
 		} finally {
-			session.close();
+			if (session != null && session.isOpen()) {
+				session.close();
+			}
 		}
 	}
 

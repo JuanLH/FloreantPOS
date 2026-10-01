@@ -40,6 +40,7 @@
 			<includes>
 				<include>floreantpos.bat</include>
 				<include>FloreantPOS-Setup.bat</include>
+				<include>FloreantPOS-WebPrintService.bat</include>
 				<include>dejavoo-proxy.bat</include>
 			</includes>
 		</fileSet>
@@ -101,6 +102,13 @@
 			<includes>
 				<include>**/*.jrxml</include>
 				<include>**/*.jasper</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>assets</directory>
+			<outputDirectory>assets</outputDirectory>
+			<includes>
+				<include>**/*</include>
 			</includes>
 		</fileSet>
 	</fileSets>
