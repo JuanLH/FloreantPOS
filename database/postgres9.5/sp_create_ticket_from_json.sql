@@ -67,6 +67,7 @@ DECLARE
     v_delivery_charge   DOUBLE PRECISION;           -- -> TICKET.DELIVERY_CHARGE
     v_is_web            BOOLEAN := TRUE;            -- -> TICKET.IS_WEB
     v_is_delivery       BOOLEAN := FALSE;           -- -> TICKET.IS_DELIVERY
+    v_owner_auto_id     INTEGER := 1;               -- resolved -> TICKET.OWNER_ID (FK -> USERS.AUTO_ID)
 
     v_ticket_id         INTEGER;                    -- generated PK returned to caller
     v_ticket_subtotal   DOUBLE PRECISION := 0.0;   -- accumulated -> TICKET.SUB_TOTAL
@@ -467,6 +468,30 @@ BEGIN
     --   0.0 here and updated with the real totals in STEP 10 after all items
     --   have been processed.
     -- =========================================================================
+
+    -- Resolve owner AUTO_ID from USERS table:
+    -- When p_owner_id > 1, resolve the corresponding AUTO_ID from USERS
+    -- where USER_ID = p_owner_id (or fallback to AUTO_ID if directly passed).
+    IF p_owner_id IS NOT NULL AND p_owner_id > 1 THEN
+        SELECT AUTO_ID INTO v_owner_auto_id
+        FROM USERS
+        WHERE USER_ID = p_owner_id
+        LIMIT 1;
+
+        IF v_owner_auto_id IS NULL THEN
+            SELECT AUTO_ID INTO v_owner_auto_id
+            FROM USERS
+            WHERE AUTO_ID = p_owner_id
+            LIMIT 1;
+        END IF;
+
+        IF v_owner_auto_id IS NULL THEN
+            v_owner_auto_id := 1;
+        END IF;
+    ELSE
+        v_owner_auto_id := COALESCE(p_owner_id, 1);
+    END IF;
+
     INSERT INTO TICKET (
         GLOBAL_ID,
         CREATE_DATE,
@@ -526,7 +551,7 @@ BEGIN
         v_delivery_charge,
         v_del_addr_full_str,
         v_customer_id,
-        p_owner_id,
+        v_owner_auto_id,
         p_terminal_id,
         p_shift_id,
         0,                  -- version_no     : optimistic-locking seed

@@ -27,12 +27,25 @@ public class WebPrintOrchestrator {
 	}
 
 	public void evaluateAutoPrint(List<WebTicketDTO> tickets) {
-		if (!autoPrintEnabled || tickets == null) {
+		if (tickets == null) {
 			return;
 		}
 		for (WebTicketDTO dto : tickets) {
 			dto.updateElapsedSeconds();
-			if (dto.getStatus() != WebTicketDTO.PrintStatus.PRINTED && dto.getStatus() != WebTicketDTO.PrintStatus.PRINT_ERROR && dto.getElapsedSeconds() >= 120) {
+			if (dto.getStatus() == WebTicketDTO.PrintStatus.PRINTED || dto.getStatus() == WebTicketDTO.PrintStatus.PRINT_ERROR) {
+				continue;
+			}
+
+			Ticket ticket = dto.getTicket();
+			Integer ownerAutoId = (ticket != null && ticket.getOwner() != null) ? ticket.getOwner().getAutoId() : null;
+			Integer ownerUserId = (ticket != null && ticket.getOwner() != null) ? ticket.getOwner().getUserId() : null;
+			boolean isWaiterTicket = (ownerAutoId != null && ownerAutoId > 1) || (ownerUserId != null && ownerUserId > 1);
+
+			if (isWaiterTicket) {
+				// RF-13 & RF-14: Waiter tickets print immediately, regardless of autoPrintEnabled
+				printTicket(dto);
+			} else if (autoPrintEnabled && dto.getElapsedSeconds() >= 120) {
+				// Standard 2-minute review countdown
 				printTicket(dto);
 			}
 		}

@@ -2,7 +2,9 @@ package com.floreantpos.services.webprint;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -129,12 +131,27 @@ public class WebPrintController {
 
 	private void handlePolledTickets(List<WebTicketDTO> polledTickets) {
 		synchronized (activeTickets) {
+			Map<Integer, WebTicketDTO> existingMap = new HashMap<Integer, WebTicketDTO>();
+			for (WebTicketDTO existing : activeTickets) {
+				if (existing.getTicketId() != null) {
+					existingMap.put(existing.getTicketId(), existing);
+				}
+			}
+
 			activeTickets.clear();
 			if (polledTickets != null) {
-				activeTickets.addAll(polledTickets);
+				for (WebTicketDTO polled : polledTickets) {
+					if (polled.getTicketId() != null && existingMap.containsKey(polled.getTicketId())) {
+						WebTicketDTO prev = existingMap.get(polled.getTicketId());
+						polled.setStatus(prev.getStatus());
+						polled.setErrorMessage(prev.getErrorMessage());
+						polled.setSilenced(prev.isSilenced());
+					}
+					activeTickets.add(polled);
+				}
 			}
-			alarmManager.evaluateAlarm(activeTickets);
 			orchestrator.evaluateAutoPrint(activeTickets);
+			alarmManager.evaluateAlarm(activeTickets);
 			notifyTicketsUpdated(new ArrayList<WebTicketDTO>(activeTickets));
 		}
 	}
