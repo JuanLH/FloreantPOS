@@ -107,6 +107,16 @@ DECLARE
     v_del_latitude       DOUBLE PRECISION;          -- -> DELIVERY_ADDRESS.LATITUDE
     v_del_longitude      DOUBLE PRECISION;          -- -> DELIVERY_ADDRESS.LONGITUDE
     v_del_addr_full_str  TEXT;                      -- combined string -> TICKET.DELIVERY_ADDRESS
+    v_calc_parts         TEXT[];                    -- temporary array for formatted address
+    v_temp_street        TEXT;                      -- Calle
+    v_temp_prop_type     TEXT;                      -- 'casa' | 'apartamento'
+    v_temp_house_no      TEXT;                      -- No. Casa
+    v_temp_level         TEXT;                      -- Nivel / Planta
+    v_temp_res           TEXT;                      -- Residencial
+    v_temp_area          TEXT;                      -- Area / Edificio
+    v_temp_apt           TEXT;                      -- No. Apartamento
+    v_temp_sector        TEXT;                      -- Sector
+    v_temp_ref           TEXT;                      -- Referencia
 
     -- -------------------------------------------------------------------------
     -- Per-item loop variables  (iterate over p_order_json -> 'items')
@@ -339,6 +349,92 @@ BEGIN
         v_del_latitude  := (v_delivery_obj->>'latitude')::DOUBLE PRECISION;
         v_del_longitude := (v_delivery_obj->>'longitude')::DOUBLE PRECISION;
 
+        -- Extract individual components if provided
+        v_temp_street    := COALESCE(v_delivery_obj->>'calle', v_delivery_obj->>'street');
+        v_temp_prop_type := LOWER(COALESCE(v_delivery_obj->>'property_type', v_delivery_obj->>'propertyType', v_delivery_obj->>'tipo', ''));
+        v_temp_sector    := COALESCE(v_delivery_obj->>'sector', '');
+        v_temp_ref       := COALESCE(v_delivery_obj->>'referencia', v_delivery_obj->>'references', v_delivery_obj->>'reference');
+
+        -- Format address according to standard order if components are present:
+        -- "{Calle}, 'Casa'[ No. {Numero-casa}, Planta {Nivel} ] || 'Apartamento':[ Res. {Residencial}, {Area}, apt. {Numero} ], {Sector}, Ref {Referencia}"
+        IF (v_temp_street IS NOT NULL AND TRIM(v_temp_street) <> '') AND
+           (v_del_address IS NULL OR TRIM(v_del_address) = '' OR v_temp_prop_type <> '') THEN
+
+            v_calc_parts := ARRAY[]::TEXT[];
+            v_calc_parts := array_append(v_calc_parts, TRIM(v_temp_street));
+
+            IF v_temp_prop_type = 'apartamento' OR
+               (v_temp_prop_type <> 'casa' AND (
+                  (v_delivery_obj->>'residencial') IS NOT NULL OR
+                  (v_delivery_obj->>'residential') IS NOT NULL OR
+                  (v_delivery_obj->>'building_name') IS NOT NULL OR
+                  (v_delivery_obj->>'area') IS NOT NULL OR
+                  (v_delivery_obj->>'numero') IS NOT NULL OR
+                  (v_delivery_obj->>'apartment_number') IS NOT NULL
+               )) THEN
+                -- Apartamento: [ Res. {Residencial}, {Area}, apt. {Numero} ]
+                v_temp_res := TRIM(COALESCE(v_delivery_obj->>'residencial', v_delivery_obj->>'residential', v_delivery_obj->>'building_name', ''));
+                IF v_temp_res <> '' THEN
+                    IF LOWER(v_temp_res) ~ '^res\.?' THEN
+                        v_calc_parts := array_append(v_calc_parts, v_temp_res);
+                    ELSE
+                        v_calc_parts := array_append(v_calc_parts, 'Res. ' || v_temp_res);
+                    END IF;
+                END IF;
+
+                v_temp_area := TRIM(COALESCE(v_delivery_obj->>'area', v_delivery_obj->>'building_number', ''));
+                IF v_temp_area <> '' THEN
+                    v_calc_parts := array_append(v_calc_parts, v_temp_area);
+                END IF;
+
+                v_temp_apt := TRIM(COALESCE(v_delivery_obj->>'numero', v_delivery_obj->>'apartment_number', v_delivery_obj->>'apartment', ''));
+                IF v_temp_apt <> '' THEN
+                    IF LOWER(v_temp_apt) ~ '^apt\.?' THEN
+                        v_calc_parts := array_append(v_calc_parts, v_temp_apt);
+                    ELSE
+                        v_calc_parts := array_append(v_calc_parts, 'apt. ' || v_temp_apt);
+                    END IF;
+                END IF;
+            ELSE
+                -- Casa: [ No. {Numero-casa}, Planta {Nivel} ]
+                v_temp_house_no := TRIM(COALESCE(v_delivery_obj->>'numero_casa', v_delivery_obj->>'house_number', v_delivery_obj->>'houseNumber', ''));
+                IF v_temp_house_no <> '' THEN
+                    IF LOWER(v_temp_house_no) ~ '^no\.?' THEN
+                        v_calc_parts := array_append(v_calc_parts, v_temp_house_no);
+                    ELSE
+                        v_calc_parts := array_append(v_calc_parts, 'No. ' || v_temp_house_no);
+                    END IF;
+                END IF;
+
+                v_temp_level := TRIM(COALESCE(v_delivery_obj->>'nivel', v_delivery_obj->>'level', v_delivery_obj->>'planta', ''));
+                IF v_temp_level <> '' THEN
+                    IF LOWER(v_temp_level) ~ '^planta' THEN
+                        v_calc_parts := array_append(v_calc_parts, v_temp_level);
+                    ELSE
+                        v_calc_parts := array_append(v_calc_parts, 'Planta ' || v_temp_level);
+                    END IF;
+                END IF;
+            END IF;
+
+            IF v_temp_sector IS NOT NULL AND TRIM(v_temp_sector) <> '' THEN
+                v_calc_parts := array_append(v_calc_parts, TRIM(v_temp_sector));
+            END IF;
+
+            IF v_temp_ref IS NOT NULL AND TRIM(v_temp_ref) <> '' THEN
+                IF LOWER(TRIM(v_temp_ref)) ~ '^ref[\s.:]' THEN
+                    v_calc_parts := array_append(v_calc_parts, TRIM(v_temp_ref));
+                ELSE
+                    v_calc_parts := array_append(v_calc_parts, 'Ref ' || TRIM(v_temp_ref));
+                END IF;
+            END IF;
+
+            v_del_address := array_to_string(v_calc_parts, ', ');
+        END IF;
+
+        IF v_del_address IS NOT NULL AND (v_cust_address IS NULL OR TRIM(v_cust_address) = '') THEN
+            v_cust_address := v_del_address;
+        END IF;
+
         IF v_del_label IS NOT NULL AND TRIM(v_del_label) <> '' THEN
             INSERT INTO DELIVERY_ADDRESS (
                 LABEL,
@@ -391,7 +487,8 @@ BEGIN
         -- Build a denormalised address string for TICKET.DELIVERY_ADDRESS column
         v_del_addr_full_str := TRIM(
             COALESCE(v_del_address, '') ||
-            CASE WHEN v_del_room_no IS NOT NULL THEN ', ' || v_del_room_no ELSE '' END
+            CASE WHEN v_del_room_no IS NOT NULL AND TRIM(v_del_room_no) <> '' AND POSITION(v_del_room_no IN COALESCE(v_del_address, '')) = 0
+                 THEN ', ' || v_del_room_no ELSE '' END
         );
 
     END IF; -- END delivery address block
