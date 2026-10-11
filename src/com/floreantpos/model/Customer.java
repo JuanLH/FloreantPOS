@@ -73,4 +73,16 @@ public class Customer extends BaseCustomer {
 		if (lName == null) lName = "";
 		return (fName + " " + lName).trim();
 	}
+
+	public CustomerAddress getDefaultAddress() {
+		if (getAddresses() == null || getAddresses().isEmpty()) {
+			return null;
+		}
+		for (CustomerAddress addr : getAddresses()) {
+			if (Boolean.TRUE.equals(addr.getIsDefault())) {
+				return addr;
+			}
+		}
+		return getAddresses().get(0);
+	}
 }

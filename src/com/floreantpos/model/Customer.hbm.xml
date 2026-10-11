@@ -40,6 +40,13 @@
 			<one-to-many class="com.floreantpos.model.DeliveryAddress" />
 		</bag>
 		
+		<bag cascade="all,delete-orphan" inverse="true" lazy="false" name="addresses" table="CUSTOMER_ADDRESS">
+			<key>
+				<column name="CUSTOMER_ID" />
+			</key>
+			<one-to-many class="com.floreantpos.model.CustomerAddress" />
+		</bag>
+		
 		<bag cascade="all,delete-orphan" inverse="true" lazy="false" name="deliveryInstructions" table="DELIVERY_INSTRUCTION">
 			<key>
 				<column name="CUSTOMER_NO" />

@@ -684,7 +684,7 @@ public class ReceiptPrintService {
 		}
 
 		//customer info section
-		if (orderType == null || orderType.isRequiredCustomerData()) {
+		if (orderType == null || orderType.isRequiredCustomerData() || orderType.isDelivery() || StringUtils.isNotEmpty(ticket.getDeliveryAddress())) {
 
 			String customerName = ticket.getProperty(Ticket.CUSTOMER_NAME);
 			String customerMobile = ticket.getProperty(Ticket.CUSTOMER_MOBILE);
@@ -722,7 +722,13 @@ public class ReceiptPrintService {
 
 				if (StringUtils.isNotEmpty(deliveryAddress)) {
 					beginRow(ticketHeaderBuilder);
-					addColumn(ticketHeaderBuilder, deliveryAddress);
+					String addressLabel = ticket.getProperty(Ticket.DELIVERY_ADDRESS_LABEL);
+					if (StringUtils.isNotEmpty(addressLabel)) {
+						addColumn(ticketHeaderBuilder, "[" + addressLabel + "] " + deliveryAddress);
+					}
+					else {
+						addColumn(ticketHeaderBuilder, deliveryAddress);
+					}
 					endRow(ticketHeaderBuilder);
 
 					if (StringUtils.isNotEmpty(ticket.getExtraDeliveryInfo())) {

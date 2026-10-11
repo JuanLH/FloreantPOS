@@ -71,6 +71,13 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 	private FixedLengthTextField tfLoyaltyNo;
 	private QwertyKeyPad qwertyKeyPad;
 
+	private javax.swing.JTable addressTable;
+	private com.floreantpos.customer.CustomerAddressTableModel addressTableModel;
+	private com.floreantpos.swing.PosSmallButton btnAddAddress;
+	private com.floreantpos.swing.PosSmallButton btnEditAddress;
+	private com.floreantpos.swing.PosSmallButton btnDeleteAddress;
+	private List<com.floreantpos.model.CustomerAddress> deletedAddresses = new java.util.ArrayList<com.floreantpos.model.CustomerAddress>();
+
 	public boolean isKeypad;
 
 	public QuickCustomerForm() {
@@ -149,8 +156,79 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		inputPanel.add(lblDeliveryCharge, "cell 0 7,right");
 		inputPanel.add(tfDeliveryCharge, "cell 1 7");
 
-		inputPanel.add(lblAddress, "cell 2 1 1 6,right"); //$NON-NLS-1$
-		inputPanel.add(scrlDescription, "grow, cell 3 1 1 6"); //$NON-NLS-1$
+		JPanel addressPanel = new JPanel(new MigLayout("insets 5, fill", "[grow]", "[][grow][]"));
+		addressPanel.setBorder(BorderFactory.createTitledBorder("Customer Addresses"));
+
+		JPanel previewPanel = new JPanel(new MigLayout("insets 0, fill", "[][grow]", "[]"));
+		previewPanel.add(lblAddress, "cell 0 0, top");
+		scrlDescription.setPreferredSize(PosUIManager.getSize(300, 45));
+		tfAddress.setRows(2);
+		tfAddress.setLineWrap(true);
+		tfAddress.setWrapStyleWord(true);
+		previewPanel.add(scrlDescription, "cell 1 0, grow");
+		addressPanel.add(previewPanel, "cell 0 0, growx, wrap");
+
+		addressTableModel = new com.floreantpos.customer.CustomerAddressTableModel();
+		addressTable = new javax.swing.JTable(addressTableModel);
+		addressTable.setRowHeight(PosUIManager.getSize(26));
+		addressTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+		if (addressTable.getColumnModel().getColumnCount() >= 3) {
+			addressTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+			addressTable.getColumnModel().getColumn(1).setPreferredWidth(230);
+			addressTable.getColumnModel().getColumn(2).setPreferredWidth(55);
+		}
+
+		addressTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+			@Override
+			public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+				if (!e.getValueIsAdjusting()) {
+					int row = addressTable.getSelectedRow();
+					if (row >= 0) {
+						com.floreantpos.model.CustomerAddress addr = addressTableModel.getAddress(row);
+						if (addr != null && addr.getAddressText() != null) {
+							tfAddress.setText(addr.getAddressText());
+						}
+					}
+				}
+			}
+		});
+
+		JScrollPane scrlAddressTable = new JScrollPane(addressTable);
+		scrlAddressTable.setPreferredSize(PosUIManager.getSize(365, 120));
+		addressPanel.add(scrlAddressTable, "cell 0 1, grow, wrap");
+
+		btnAddAddress = new com.floreantpos.swing.PosSmallButton("Add Address");
+		btnEditAddress = new com.floreantpos.swing.PosSmallButton("Edit Address");
+		btnDeleteAddress = new com.floreantpos.swing.PosSmallButton("Delete Address");
+
+		btnAddAddress.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doAddAddress();
+			}
+		});
+
+		btnEditAddress.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doEditAddress();
+			}
+		});
+
+		btnDeleteAddress.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doDeleteAddress();
+			}
+		});
+
+		JPanel addressButtonPanel = new JPanel(new MigLayout("insets 0, fill", "[grow][grow][grow]", "[]"));
+		addressButtonPanel.add(btnAddAddress, "cell 0 0, grow");
+		addressButtonPanel.add(btnEditAddress, "cell 1 0, grow");
+		addressButtonPanel.add(btnDeleteAddress, "cell 2 0, grow");
+		addressPanel.add(addressButtonPanel, "cell 0 2, growx");
+
+		inputPanel.add(addressPanel, "cell 2 1 2 7, grow");
 
 		qwertyKeyPad = new QwertyKeyPad();
 
@@ -236,6 +314,10 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCellPhone.setEnabled(enable);
 		tfDeliveryCharge.setEnabled(enable);
 		tfLoyaltyNo.setEnabled(enable);
+		if (addressTable != null) addressTable.setEnabled(enable);
+		if (btnAddAddress != null) btnAddAddress.setEnabled(enable);
+		if (btnEditAddress != null) btnEditAddress.setEnabled(enable);
+		if (btnDeleteAddress != null) btnDeleteAddress.setEnabled(enable);
 	}
 
 	@Override
@@ -249,6 +331,10 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCellPhone.setEnabled(enable);
 		tfDeliveryCharge.setEnabled(enable);
 		tfLoyaltyNo.setEnabled(enable);
+		if (addressTable != null) addressTable.setEnabled(enable);
+		if (btnAddAddress != null) btnAddAddress.setEnabled(enable);
+		if (btnEditAddress != null) btnEditAddress.setEnabled(enable);
+		if (btnDeleteAddress != null) btnDeleteAddress.setEnabled(enable);
 	}
 
 	public void setFieldsEditable(boolean editable) {
@@ -261,6 +347,63 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfCellPhone.setEditable(editable);
 		tfDeliveryCharge.setEnabled(editable);
 		tfLoyaltyNo.setEditable(editable);
+		if (addressTable != null) addressTable.setEnabled(editable);
+		if (btnAddAddress != null) btnAddAddress.setEnabled(editable);
+		if (btnEditAddress != null) btnEditAddress.setEnabled(editable);
+		if (btnDeleteAddress != null) btnDeleteAddress.setEnabled(editable);
+	}
+
+	private void doAddAddress() {
+		com.floreantpos.customer.CustomerAddressDialog dlg = new com.floreantpos.customer.CustomerAddressDialog();
+		dlg.open();
+		if (!dlg.isCanceled() && dlg.getCustomerAddress() != null) {
+			com.floreantpos.model.CustomerAddress newAddr = dlg.getCustomerAddress();
+			addressTableModel.addAddress(newAddr);
+			com.floreantpos.model.CustomerAddress def = addressTableModel.getDefaultAddress();
+			if (def != null) {
+				tfAddress.setText(def.getAddressText());
+			}
+			int idx = addressTableModel.getAddresses().indexOf(newAddr);
+			if (idx >= 0 && idx < addressTable.getRowCount()) {
+				addressTable.setRowSelectionInterval(idx, idx);
+			}
+		}
+	}
+
+	private void doEditAddress() {
+		int row = addressTable.getSelectedRow();
+		if (row < 0) {
+			POSMessageDialog.showError(this, "Please select an address to edit.");
+			return;
+		}
+		com.floreantpos.model.CustomerAddress toEdit = addressTableModel.getAddress(row);
+		com.floreantpos.customer.CustomerAddressDialog dlg = new com.floreantpos.customer.CustomerAddressDialog(toEdit);
+		dlg.open();
+		if (!dlg.isCanceled() && dlg.getCustomerAddress() != null) {
+			addressTableModel.updateAddress(row, dlg.getCustomerAddress());
+			com.floreantpos.model.CustomerAddress def = addressTableModel.getDefaultAddress();
+			if (def != null) {
+				tfAddress.setText(def.getAddressText());
+			}
+		}
+	}
+
+	private void doDeleteAddress() {
+		int row = addressTable.getSelectedRow();
+		if (row < 0) {
+			POSMessageDialog.showError(this, "Please select an address to delete.");
+			return;
+		}
+		int option = POSMessageDialog.showYesNoQuestionDialog(this,
+				"Are you sure you want to delete the selected address?", "Confirm");
+		if (option == JOptionPane.YES_OPTION) {
+			com.floreantpos.model.CustomerAddress removed = addressTableModel.removeAddress(row);
+			if (removed != null && removed.getId() != null) {
+				deletedAddresses.add(removed);
+			}
+			com.floreantpos.model.CustomerAddress def = addressTableModel.getDefaultAddress();
+			tfAddress.setText(def != null ? def.getAddressText() : "");
+		}
 	}
 
 	@Override
@@ -277,6 +420,13 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		
 		Restaurant restaurant = Application.getInstance().getRestaurant();
 		tfDeliveryCharge.setText(restaurant.getDeliveryChargeAmount().toString()); //$NON-NLS-1$
+
+		if (addressTableModel != null) {
+			addressTableModel.setAddresses(new java.util.ArrayList<com.floreantpos.model.CustomerAddress>());
+		}
+		if (deletedAddresses != null) {
+			deletedAddresses.clear();
+		}
 	}
 
 	public void updateCustomer(Customer customer) {
@@ -290,6 +440,40 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfLoyaltyNo.setText(customer.getLoyaltyNo());// $NON-NLS-1$
 		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");//$NON-NLS-1$
 		setBean(customer);
+
+		if (deletedAddresses != null) {
+			deletedAddresses.clear();
+		}
+
+		List<com.floreantpos.model.CustomerAddress> addresses = null;
+		if (customer.getAutoId() != null) {
+			addresses = com.floreantpos.model.dao.CustomerAddressDAO.getInstance().findByCustomer(customer);
+		}
+		if ((addresses == null || addresses.isEmpty()) && customer.getAddresses() != null) {
+			addresses = customer.getAddresses();
+		}
+		if (addresses == null) {
+			addresses = new java.util.ArrayList<com.floreantpos.model.CustomerAddress>();
+		}
+		if (addresses.isEmpty() && StringUtils.isNotEmpty(customer.getAddress())) {
+			com.floreantpos.model.CustomerAddress initialAddr = new com.floreantpos.model.CustomerAddress();
+			initialAddr.setCustomer(customer);
+			initialAddr.setAddressLabel("Home");
+			initialAddr.setAddressText(customer.getAddress());
+			initialAddr.setIsDefault(true);
+			addresses.add(initialAddr);
+		}
+		if (addressTableModel != null) {
+			addressTableModel.setAddresses(addresses);
+			com.floreantpos.model.CustomerAddress def = addressTableModel.getDefaultAddress();
+			if (def != null) {
+				tfAddress.setText(def.getAddressText());
+				int defRow = addressTableModel.getAddresses().indexOf(def);
+				if (defRow >= 0 && defRow < addressTable.getRowCount()) {
+					addressTable.setRowSelectionInterval(defRow, defRow);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -299,6 +483,23 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 				return false;
 			Customer customer = (Customer) getBean();
 			CustomerDAO.getInstance().saveOrUpdate(customer);
+
+			if (deletedAddresses != null) {
+				for (com.floreantpos.model.CustomerAddress del : deletedAddresses) {
+					if (del.getId() != null) {
+						com.floreantpos.model.dao.CustomerAddressDAO.getInstance().delete(del);
+					}
+				}
+				deletedAddresses.clear();
+			}
+
+			if (addressTableModel != null && addressTableModel.getAddresses() != null) {
+				for (com.floreantpos.model.CustomerAddress addr : addressTableModel.getAddresses()) {
+					addr.setCustomer(customer);
+					com.floreantpos.model.dao.CustomerAddressDAO.getInstance().saveOrUpdate(addr);
+				}
+			}
+
 			updateView();
 			return true;
 		} catch (IllegalModelStateException e) {
@@ -326,6 +527,36 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		tfLoyaltyNo.setText(customer.getLoyaltyNo());
 		tfAddress.setText(customer.getAddress());
 		tfDeliveryCharge.setText(customer.getDeliveryCharge() + "");
+
+		List<com.floreantpos.model.CustomerAddress> addresses = null;
+		if (customer.getAutoId() != null) {
+			addresses = com.floreantpos.model.dao.CustomerAddressDAO.getInstance().findByCustomer(customer);
+		}
+		if ((addresses == null || addresses.isEmpty()) && customer.getAddresses() != null) {
+			addresses = customer.getAddresses();
+		}
+		if (addresses == null) {
+			addresses = new java.util.ArrayList<com.floreantpos.model.CustomerAddress>();
+		}
+		if (addresses.isEmpty() && StringUtils.isNotEmpty(customer.getAddress())) {
+			com.floreantpos.model.CustomerAddress initialAddr = new com.floreantpos.model.CustomerAddress();
+			initialAddr.setCustomer(customer);
+			initialAddr.setAddressLabel("Home");
+			initialAddr.setAddressText(customer.getAddress());
+			initialAddr.setIsDefault(true);
+			addresses.add(initialAddr);
+		}
+		if (addressTableModel != null) {
+			addressTableModel.setAddresses(addresses);
+			com.floreantpos.model.CustomerAddress def = addressTableModel.getDefaultAddress();
+			if (def != null) {
+				tfAddress.setText(def.getAddressText());
+				int defRow = addressTableModel.getAddresses().indexOf(def);
+				if (defRow >= 0 && defRow < addressTable.getRowCount()) {
+					addressTable.setRowSelectionInterval(defRow, defRow);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -358,7 +589,6 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		customer.setName(name);
 		customer.setFirstName(fname);
 		customer.setLastName(lastName);
-		customer.setAddress(tfAddress.getText());
 		customer.setCity(tfCity.getText());
 		customer.setState(tfState.getText());
 		// customer.setState(tfZip.getText());
@@ -367,6 +597,22 @@ public class QuickCustomerForm extends BeanEditor<Customer> {
 		customer.setMobileNo(tfCellPhone.getText());
 		customer.setLoyaltyNo(tfLoyaltyNo.getText());
 		customer.setDeliveryCharge(Double.parseDouble(tfDeliveryCharge.getText()));
+
+		List<com.floreantpos.model.CustomerAddress> addresses = addressTableModel != null ? addressTableModel.getAddresses() : null;
+		if (addresses != null && !addresses.isEmpty()) {
+			com.floreantpos.model.CustomerAddress defaultAddr = addressTableModel.getDefaultAddress();
+			if (defaultAddr != null) {
+				customer.setAddress(defaultAddr.getAddressText());
+			} else {
+				customer.setAddress(addresses.get(0).getAddressText());
+			}
+			for (com.floreantpos.model.CustomerAddress a : addresses) {
+				a.setCustomer(customer);
+			}
+			customer.setAddresses(new java.util.ArrayList<com.floreantpos.model.CustomerAddress>(addresses));
+		} else {
+			customer.setAddress(tfAddress.getText());
+		}
 
 		return true;
 	}

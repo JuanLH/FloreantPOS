@@ -139,6 +139,7 @@ public class Ticket extends BaseTicket {
 	public static final String CUSTOMER_ZIP_CODE = "CUSTOMER_ZIP_CODE"; //$NON-NLS-1$
 	public static final String MANAGER_INSTRUCTION = "MANAGER_INSTRUCTION"; //$NON-NLS-1$
 	public static final String PHONE_EXTENSION = "PHONE_EXTENSION";
+	public static final String DELIVERY_ADDRESS_LABEL = "DELIVERY_ADDRESS_LABEL"; //$NON-NLS-1$
 
 	public static final String DRIVER_OUT_TIME = "OUT_AT"; //$NON-NLS-1$
 
@@ -736,6 +737,10 @@ public class Ticket extends BaseTicket {
 		getProperties().put(name, value);
 	}
 
+	public void setProperty(String name, String value) {
+		addProperty(name, value);
+	}
+
 	public boolean hasProperty(String key) {
 		return getProperty(key) != null;
 	}
@@ -968,5 +973,13 @@ public class Ticket extends BaseTicket {
 			}
 		}
 		return null;
+	}
+
+	public String getDeliveryAddressLabel() {
+		return getProperty(DELIVERY_ADDRESS_LABEL);
+	}
+
+	public void setDeliveryAddressLabel(String label) {
+		addProperty(DELIVERY_ADDRESS_LABEL, label);
 	}
 }

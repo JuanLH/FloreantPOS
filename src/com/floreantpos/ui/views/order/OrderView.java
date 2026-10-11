@@ -52,6 +52,7 @@ import com.floreantpos.POSConstants;
 import com.floreantpos.PosException;
 import com.floreantpos.PosLog;
 import com.floreantpos.config.TerminalConfig;
+import com.floreantpos.customer.CustomerAddressSelectionDialog;
 import com.floreantpos.customer.CustomerSelectorDialog;
 import com.floreantpos.customer.CustomerSelectorFactory;
 import com.floreantpos.extension.ExtensionManager;
@@ -59,6 +60,7 @@ import com.floreantpos.extension.OrderServiceExtension;
 import com.floreantpos.extension.OrderServiceFactory;
 import com.floreantpos.main.Application;
 import com.floreantpos.model.Customer;
+import com.floreantpos.model.CustomerAddress;
 import com.floreantpos.model.ITicketItem;
 import com.floreantpos.model.MenuCategory;
 import com.floreantpos.model.MenuGroup;
@@ -70,6 +72,7 @@ import com.floreantpos.model.TicketItem;
 import com.floreantpos.model.TicketItemCookingInstruction;
 import com.floreantpos.model.User;
 import com.floreantpos.model.UserPermission;
+import com.floreantpos.model.dao.CustomerAddressDAO;
 import com.floreantpos.model.dao.CustomerDAO;
 import com.floreantpos.model.dao.MenuItemDAO;
 import com.floreantpos.model.dao.ShopTableDAO;
@@ -132,6 +135,7 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 	private com.floreantpos.swing.PosButton btnOrderType = new com.floreantpos.swing.PosButton(POSConstants.ORDER_TYPE_BUTTON_TEXT);
 	private com.floreantpos.swing.PosButton btnTableNumber = new com.floreantpos.swing.PosButton(POSConstants.TABLE_NO_BUTTON_TEXT);
 	private com.floreantpos.swing.PosButton btnCustomer = new PosButton(POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT);
+	private com.floreantpos.swing.PosButton btnDeliveryAddress = new PosButton("ADDRESS");
 	private PosButton btnCookingInstruction = new PosButton(IconFactory.getIcon("/ui_icons/", "cooking-instruction.png"));
 	//	private PosButton btnAddOn = new PosButton(POSConstants.ADD_ON);
 	private PosButton btnDiscount = new PosButton(Messages.getString("TicketView.43")); //$NON-NLS-1$
@@ -339,6 +343,13 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 			}
 		});
 
+		btnDeliveryAddress.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doPickDeliveryAddress();
+			}
+		});
+
 		btnMisc.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				doInsertMisc(evt);
@@ -434,6 +445,7 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 
 		actionButtonPanel.add(btnOrderType);
 		actionButtonPanel.add(btnCustomer);
+		actionButtonPanel.add(btnDeliveryAddress);
 		actionButtonPanel.add(btnDeliveryInfo);
 		actionButtonPanel.add(btnTableNumber);
 		actionButtonPanel.add(btnGuestNo);
@@ -449,6 +461,7 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 		btnCookingInstruction.setEnabled(false);
 		//		btnAddOn.setEnabled(false);
 		btnDeliveryInfo.setVisible(false);
+		btnDeliveryAddress.setVisible(false);
 	}
 
 	private JPanel createTicketSummeryPanel() {
@@ -729,12 +742,35 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 		dialog.openUndecoratedFullScreen();
 
 		if (!dialog.isCanceled()) {
-			currentTicket.setCustomer(dialog.getSelectedCustomer());
-			currentTicket.setDeliveryAddress(dialog.getSelectedCustomer().getAddress());
-			currentTicket.setDeliveryCharge(dialog.getSelectedCustomer().getDeliveryCharge());			
-			btnCustomer.setText("<html><body><center>"+ POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT +"<br><b>\"" + dialog.getSelectedCustomer().getFirstName() + " "+ dialog.getSelectedCustomer().getMobileNo() + "\"<b></center></body></html>");
-			this.getTicketView().updateView();
+			Customer selectedCustomer = dialog.getSelectedCustomer();
+			currentTicket.setCustomer(selectedCustomer);
+			currentTicket.setDeliveryCharge(selectedCustomer.getDeliveryCharge());
+			btnCustomer.setText("<html><body><center>"+ POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT +"<br><b>\"" + selectedCustomer.getFirstName() + " "+ selectedCustomer.getMobileNo() + "\"<b></center></body></html>");
 
+			List<CustomerAddress> addresses = CustomerAddressDAO.getInstance().findByCustomer(selectedCustomer);
+			CustomerAddress defaultAddr = null;
+			if (addresses != null && !addresses.isEmpty()) {
+				for (CustomerAddress a : addresses) {
+					if (Boolean.TRUE.equals(a.getIsDefault())) {
+						defaultAddr = a;
+						break;
+					}
+				}
+				if (defaultAddr == null) {
+					defaultAddr = addresses.get(0);
+				}
+			}
+
+			if (defaultAddr != null) {
+				currentTicket.setDeliveryAddress(defaultAddr.getAddressText());
+				currentTicket.setProperty(Ticket.DELIVERY_ADDRESS_LABEL, defaultAddr.getAddressLabel());
+			} else {
+				currentTicket.setDeliveryAddress(selectedCustomer.getAddress());
+				currentTicket.setProperty(Ticket.DELIVERY_ADDRESS_LABEL, "Home");
+			}
+
+			updateDeliveryAddressButton();
+			this.getTicketView().updateView();
 		}
 	}
 
@@ -864,11 +900,100 @@ public class OrderView extends ViewPanel implements PaymentListener, TicketEditL
 				btnGuestNo.setText("GUEST" + ": " + String.valueOf(currentTicket.getNumberOfGuests()));
 			}
 			
-			if(getCurrentTicket().getCustomer() != null) {
+			if (getCurrentTicket().getCustomer() != null) {
 				btnCustomer.setText("<html><body><center>"+ POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT +"<br><b>\"" + getCurrentTicket().getCustomer().getFirstName() +" "+getCurrentTicket().getCustomer().getMobileNo() + "\"</b></center></body></html>");
 			}
+			else {
+				btnCustomer.setText(POSConstants.CUSTOMER_SELECTION_BUTTON_TEXT);
+			}
+
+			boolean isDelivery = type != null && type.isDelivery();
+			btnDeliveryAddress.setVisible(isDelivery);
+			if (isDelivery) {
+				updateDeliveryAddressButton();
+			}
+
 			OrderServiceExtension orderService = (OrderServiceExtension) ExtensionManager.getPlugin(OrderServiceExtension.class);
 			btnDeliveryInfo.setVisible(orderService != null && type.isRequiredCustomerData());
+		}
+	}
+
+	private void updateDeliveryAddressButton() {
+		if (currentTicket == null || currentTicket.getOrderType() == null || !currentTicket.getOrderType().isDelivery()) {
+			btnDeliveryAddress.setVisible(false);
+			return;
+		}
+		btnDeliveryAddress.setVisible(true);
+
+		String label = currentTicket.getProperty(Ticket.DELIVERY_ADDRESS_LABEL);
+		if (StringUtils.isEmpty(label) && currentTicket.getCustomer() != null) {
+			List<CustomerAddress> addresses = CustomerAddressDAO.getInstance().findByCustomer(currentTicket.getCustomer());
+			if (addresses != null) {
+				for (CustomerAddress a : addresses) {
+					if (currentTicket.getDeliveryAddress() != null && currentTicket.getDeliveryAddress().equals(a.getAddressText())) {
+						label = a.getAddressLabel();
+						currentTicket.setProperty(Ticket.DELIVERY_ADDRESS_LABEL, label);
+						break;
+					}
+					if (Boolean.TRUE.equals(a.getIsDefault()) && label == null) {
+						label = a.getAddressLabel();
+					}
+				}
+			}
+		}
+
+		if (StringUtils.isNotEmpty(label)) {
+			btnDeliveryAddress.setText("<html><body><center>ADDRESS<br><b>\"" + label + "\"</b></center></body></html>");
+		}
+		else {
+			btnDeliveryAddress.setText("<html><body><center>ADDRESS<br><b>(Select)</b></center></body></html>");
+		}
+	}
+
+	protected void doPickDeliveryAddress() {
+		if (currentTicket == null) {
+			return;
+		}
+		Customer customer = currentTicket.getCustomer();
+		if (customer == null && currentTicket.getCustomerId() != null) {
+			customer = CustomerDAO.getInstance().get(currentTicket.getCustomerId());
+			if (customer != null) {
+				currentTicket.setCustomer(customer);
+			}
+		}
+		if (customer == null) {
+			POSMessageDialog.showError(this, "Please select a customer first.");
+			return;
+		}
+
+		List<CustomerAddress> addresses = CustomerAddressDAO.getInstance().findByCustomer(customer);
+		if (addresses == null || addresses.isEmpty()) {
+			if (StringUtils.isNotEmpty(customer.getAddress())) {
+				CustomerAddress defaultAddr = new CustomerAddress();
+				defaultAddr.setCustomer(customer);
+				defaultAddr.setAddressLabel("Home");
+				defaultAddr.setAddressText(customer.getAddress());
+				defaultAddr.setIsDefault(true);
+				CustomerAddressDAO.getInstance().saveOrUpdate(defaultAddr);
+				addresses = new ArrayList<CustomerAddress>();
+				addresses.add(defaultAddr);
+			}
+			else {
+				POSMessageDialog.showError(this, "The selected customer has no saved addresses. Please edit the customer to add an address.");
+				return;
+			}
+		}
+
+		CustomerAddressSelectionDialog dialog = new CustomerAddressSelectionDialog(addresses);
+		dialog.setSelectedAddress(currentTicket.getDeliveryAddress(), currentTicket.getProperty(Ticket.DELIVERY_ADDRESS_LABEL));
+		dialog.open();
+
+		if (!dialog.isCanceled() && dialog.getSelectedAddress() != null) {
+			CustomerAddress picked = dialog.getSelectedAddress();
+			currentTicket.setDeliveryAddress(picked.getAddressText());
+			currentTicket.setProperty(Ticket.DELIVERY_ADDRESS_LABEL, picked.getAddressLabel());
+			updateDeliveryAddressButton();
+			ticketView.updateView();
 		}
 	}
 

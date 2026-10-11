@@ -97,6 +97,7 @@ public abstract class BaseCustomer  implements Comparable, Serializable {
 
 	// collections
 	private java.util.List<com.floreantpos.model.DeliveryAddress> deliveryAddresses;
+	private java.util.List<com.floreantpos.model.CustomerAddress> addresses;
 	private java.util.List<com.floreantpos.model.DeliveryInstruction> deliveryInstructions;
 	private java.util.Map<String,String> properties;
 
@@ -567,6 +568,26 @@ public abstract class BaseCustomer  implements Comparable, Serializable {
 	public void addTodeliveryAddresses (com.floreantpos.model.DeliveryAddress deliveryAddress) {
 		if (null == getDeliveryAddresses()) setDeliveryAddresses(new java.util.ArrayList<com.floreantpos.model.DeliveryAddress>());
 		getDeliveryAddresses().add(deliveryAddress);
+	}
+
+	/**
+	 * Return the value associated with the column: addresses
+	 */
+	public java.util.List<com.floreantpos.model.CustomerAddress> getAddresses () {
+		return addresses;
+	}
+
+	/**
+	 * Set the value related to the column: addresses
+	 * @param addresses the addresses value
+	 */
+	public void setAddresses (java.util.List<com.floreantpos.model.CustomerAddress> addresses) {
+		this.addresses = addresses;
+	}
+
+	public void addToaddresses (com.floreantpos.model.CustomerAddress customerAddress) {
+		if (null == getAddresses()) setAddresses(new java.util.ArrayList<com.floreantpos.model.CustomerAddress>());
+		getAddresses().add(customerAddress);
 	}
 
 

@@ -33,6 +33,7 @@ import com.floreantpos.model.Currency;
 import com.floreantpos.model.CurrencyBalance;
 import com.floreantpos.model.CustomPayment;
 import com.floreantpos.model.Customer;
+import com.floreantpos.model.CustomerAddress;
 import com.floreantpos.model.DataUpdateInfo;
 import com.floreantpos.model.DeliveryAddress;
 import com.floreantpos.model.DeliveryCharge;
@@ -182,6 +183,7 @@ public abstract class _RootDAO extends com.floreantpos.model.dao._BaseRootDAO {
 		configuration.addClass(CustomPayment.class);
 		configuration.addClass(com.floreantpos.model.OrderType.class);
 		configuration.addClass(DeliveryAddress.class);
+		configuration.addClass(CustomerAddress.class);
 		configuration.addClass(DeliveryInstruction.class);
 		configuration.addClass(DeliveryCharge.class);
 		configuration.addClass(DeliveryConfiguration.class);
