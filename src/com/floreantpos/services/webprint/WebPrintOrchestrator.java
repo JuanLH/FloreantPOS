@@ -38,8 +38,8 @@ public class WebPrintOrchestrator {
 
 			Ticket ticket = dto.getTicket();
 			Integer ownerAutoId = (ticket != null && ticket.getOwner() != null) ? ticket.getOwner().getAutoId() : null;
-			Integer ownerUserId = (ticket != null && ticket.getOwner() != null) ? ticket.getOwner().getUserId() : null;
-			boolean isWaiterTicket = (ownerAutoId != null && ownerAutoId > 1) || (ownerUserId != null && ownerUserId > 1);
+			//Integer ownerUserId = (ticket != null && ticket.getOwner() != null) ? ticket.getOwner().getUserId() : null;
+			boolean isWaiterTicket = (ownerAutoId != null && ownerAutoId > 1);
 
 			if (isWaiterTicket) {
 				// RF-13 & RF-14: Waiter tickets print immediately, regardless of autoPrintEnabled
