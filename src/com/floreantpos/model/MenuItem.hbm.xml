@@ -64,7 +64,7 @@
 			<one-to-many class="MenuItemModifierGroup" />
 		</bag>
 
-		<bag cascade="all,delete-orphan" inverse="false" lazy="true" name="menuItemIngredients" table="MENUITEM_INGREDIENT">
+		<bag cascade="all" inverse="true" lazy="true" name="menuItemIngredients" table="MENUITEM_INGREDIENT">
 			<key column="MENUITEM_ID" />
 			<one-to-many class="MenuItemIngredient" />
 		</bag>

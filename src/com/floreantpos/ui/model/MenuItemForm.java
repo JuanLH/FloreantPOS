@@ -80,6 +80,7 @@ import com.floreantpos.model.PrinterGroup;
 import com.floreantpos.model.TaxGroup;
 import com.floreantpos.model.dao.MenuGroupDAO;
 import com.floreantpos.model.dao.MenuItemDAO;
+import com.floreantpos.model.dao.MenuItemIngredientDAO;
 import com.floreantpos.model.dao.PrinterGroupDAO;
 import com.floreantpos.model.dao.TaxGroupDAO;
 import com.floreantpos.swing.CheckBoxList;
@@ -148,6 +149,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 	private List<MenuItemModifierGroup> menuItemModifierGroups;
 	private MenuItemMGListModel menuItemMGListModel;
 	private List<MenuItemIngredient> menuItemIngredients;
+	private List<MenuItemIngredient> deletedIngredients = new ArrayList<MenuItemIngredient>();
 	private MenuItemIngredientTableModel menuItemIngredientTableModel;
 	private javax.swing.JTable tableMenuItemIngredients;
 	private javax.swing.JPanel tabIngredients;
@@ -841,6 +843,7 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 					}
 				}
 
+				itemIngredient.setMenuItem((MenuItem) getBean());
 				menuItemIngredientTableModel.add(itemIngredient);
 			}
 		} catch (Exception x) {
@@ -888,6 +891,10 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 			if (index < 0) {
 				return;
 			}
+			MenuItemIngredient itemIngredient = menuItemIngredientTableModel.get(index);
+			if (itemIngredient != null && itemIngredient.getId() != null) {
+				deletedIngredients.add(itemIngredient);
+			}
 			menuItemIngredientTableModel.remove(index);
 		} catch (Exception x) {
 			com.floreantpos.swing.MessageDialog.showError(com.floreantpos.POSConstants.ERROR_MESSAGE, x);
@@ -903,6 +910,26 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 			MenuItem menuItem = (MenuItem) getBean();
 			MenuItemDAO menuItemDAO = new MenuItemDAO();
 			menuItemDAO.saveOrUpdate(menuItem);
+
+			if (menuItemIngredients != null) {
+				MenuItemIngredientDAO ingredientDAO = MenuItemIngredientDAO.getInstance();
+				for (MenuItemIngredient mii : menuItemIngredients) {
+					mii.setMenuItem(menuItem);
+					ingredientDAO.saveOrUpdate(mii);
+				}
+			}
+
+			if (deletedIngredients != null && !deletedIngredients.isEmpty()) {
+				MenuItemIngredientDAO ingredientDAO = MenuItemIngredientDAO.getInstance();
+				for (MenuItemIngredient item : deletedIngredients) {
+					try {
+						ingredientDAO.delete(item);
+					} catch (Exception ex) {
+						PosLog.error(getClass(), ex);
+					}
+				}
+				deletedIngredients.clear();
+			}
 		} catch (Exception e) {
 			MessageDialog.showError(com.floreantpos.POSConstants.ERROR_MESSAGE, e);
 			return false;
@@ -930,7 +957,12 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 			Hibernate.initialize(menuItem.getMenuItemIngredients());
 			session.close();
 		}
-		menuItemIngredients = menuItem.getMenuItemIngredients();
+		deletedIngredients.clear();
+		if (menuItem.getMenuItemIngredients() != null) {
+			menuItemIngredients = new ArrayList<MenuItemIngredient>(menuItem.getMenuItemIngredients());
+		} else {
+			menuItemIngredients = new ArrayList<MenuItemIngredient>();
+		}
 		if (menuItemIngredientTableModel != null) {
 			menuItemIngredientTableModel.fireTableDataChanged();
 		}
@@ -1017,6 +1049,11 @@ public class MenuItemForm extends BeanEditor<MenuItem> implements ActionListener
 		try {
 			menuItem.setDiscountRate(Double.parseDouble(tfDiscountRate.getText()));
 		} catch (Exception x) {
+		}
+		if (menuItemIngredients != null) {
+			for (MenuItemIngredient mii : menuItemIngredients) {
+				mii.setMenuItem(menuItem);
+			}
 		}
 		menuItem.setMenuItemModiferGroups(menuItemModifierGroups);
 		menuItem.setMenuItemIngredients(menuItemIngredients);

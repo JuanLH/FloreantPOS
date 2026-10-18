@@ -65,6 +65,7 @@ public class MenuItemDAO extends BaseMenuItemDAO {
 				}
 			}
 			Hibernate.initialize(menuItem.getShifts());
+			Hibernate.initialize(menuItem.getMenuItemIngredients());
 			return menuItem;
 		} finally {
 			closeSession(session);
@@ -91,6 +92,7 @@ public class MenuItemDAO extends BaseMenuItemDAO {
 			}
 
 			Hibernate.initialize(menuItem.getShifts());
+			Hibernate.initialize(menuItem.getMenuItemIngredients());
 
 			return menuItem;
 		} finally {
