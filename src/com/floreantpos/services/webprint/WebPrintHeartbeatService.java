@@ -54,11 +54,28 @@ public class WebPrintHeartbeatService {
 		if (scheduler != null && !scheduler.isShutdown()) {
 			scheduler.shutdownNow();
 		}
+		markOfflineImmediately();
 		logger.info("WebPrintHeartbeatService stopped.");
 	}
 
 	public boolean isRunning() {
 		return running;
+	}
+
+	public void markOfflineImmediately() {
+		try {
+			Restaurant restaurant = RestaurantDAO.getInstance().get(1);
+			if (restaurant == null) {
+				restaurant = RestaurantDAO.getRestaurant();
+			}
+			if (restaurant != null) {
+				restaurant.setOnlineOrderingTurnedOn(Boolean.FALSE);
+				RestaurantDAO.getInstance().saveOrUpdate(restaurant);
+				logger.info("Online ordering marked offline in database.");
+			}
+		} catch (Exception e) {
+			logger.error("Error setting online ordering offline in database", e);
+		}
 	}
 
 	public void executeHeartbeat() {
@@ -69,6 +86,7 @@ public class WebPrintHeartbeatService {
 			}
 			if (restaurant != null) {
 				restaurant.setOnlineOrderingTurnedOn(Boolean.TRUE);
+				restaurant.setOnlineOrderingLastHeartbeat(new java.util.Date());
 				RestaurantDAO.getInstance().saveOrUpdate(restaurant);
 			}
 			if (listener != null) {

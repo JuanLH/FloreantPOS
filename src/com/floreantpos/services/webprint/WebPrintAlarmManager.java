@@ -32,8 +32,8 @@ public class WebPrintAlarmManager {
 
 				Ticket t = ticket.getTicket();
 				Integer ownerAutoId = (t != null && t.getOwner() != null) ? t.getOwner().getAutoId() : null;
-				Integer ownerUserId = (t != null && t.getOwner() != null) ? t.getOwner().getUserId() : null;
-				boolean isWaiterTicket = (ownerAutoId != null && ownerAutoId > 1) || (ownerUserId != null && ownerUserId > 1);
+				//Integer ownerUserId = (t != null && t.getOwner() != null) ? t.getOwner().getUserId() : null;
+				boolean isWaiterTicket = (ownerAutoId != null && ownerAutoId > 1);
 
 				if (isWaiterTicket) {
 					// RF-15 & RF-16: Waiter orders suppress review alarm; sound only on PRINT_ERROR within 120s

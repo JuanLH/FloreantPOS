@@ -34,6 +34,7 @@ public abstract class BaseRestaurant  implements Comparable, Serializable {
 	public static String PROP_ADDRESS_LINE3 = "addressLine3"; //$NON-NLS-1$
 	public static String PROP_CURRENCY_SYMBOL = "currencySymbol"; //$NON-NLS-1$
 	public static String PROP_ONLINE_ORDERING_TURNED_ON = "onlineOrderingTurnedOn"; //$NON-NLS-1$
+	public static String PROP_ONLINE_ORDERING_LAST_HEARTBEAT = "onlineOrderingLastHeartbeat"; //$NON-NLS-1$
 
 
 	// constructors
@@ -77,6 +78,7 @@ public abstract class BaseRestaurant  implements Comparable, Serializable {
 		protected java.lang.Boolean itemPriceIncludesTax;
 		protected java.lang.Boolean allowModifierMaxExceed;
 		protected java.lang.Boolean onlineOrderingTurnedOn;
+		protected java.util.Date onlineOrderingLastHeartbeat;
 
 
 
@@ -398,6 +400,14 @@ public abstract class BaseRestaurant  implements Comparable, Serializable {
 
 	public void setOnlineOrderingTurnedOn (java.lang.Boolean onlineOrderingTurnedOn) {
 		this.onlineOrderingTurnedOn = onlineOrderingTurnedOn;
+	}
+
+	public java.util.Date getOnlineOrderingLastHeartbeat () {
+		return onlineOrderingLastHeartbeat;
+	}
+
+	public void setOnlineOrderingLastHeartbeat (java.util.Date onlineOrderingLastHeartbeat) {
+		this.onlineOrderingLastHeartbeat = onlineOrderingLastHeartbeat;
 	}
 
 

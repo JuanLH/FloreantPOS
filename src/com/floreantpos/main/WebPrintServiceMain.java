@@ -29,7 +29,19 @@ public class WebPrintServiceMain {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					WebPrintController controller = new WebPrintController();
+					final WebPrintController controller = new WebPrintController();
+					Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								if (controller.isRunning()) {
+									controller.stopService();
+								}
+							} catch (Exception ignored) {
+							}
+						}
+					}, "WebPrintShutdownHook"));
+
 					WebPrintWindow window = new WebPrintWindow(controller);
 					window.setVisible(true);
 					controller.startService();
